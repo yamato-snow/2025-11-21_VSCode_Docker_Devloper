@@ -1,0 +1,125 @@
+{
+  "name": "FastAPI Backend Development",
+
+  // Docker Composeを使用
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "api",
+  "workspaceFolder": "/workspace",
+
+  // ポート転送
+  "forwardPorts": [8000, 5432, 6379],
+  "portsAttributes": {
+    "8000": {
+      "label": "FastAPI Server",
+      "onAutoForward": "notify"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    },
+    "6379": {
+      "label": "Redis",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // Dev Container Features
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+
+  // VSCodeカスタマイズ
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Python開発
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "charliermarsh.ruff",
+
+        // データベース
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+
+        // Docker
+        "ms-azuretools.vscode-docker",
+
+        // REST Client（API テスト用）
+        "humao.rest-client",
+
+        // その他
+        "ms-python.mypy-type-checker",
+        "tamasfe.even-better-toml"
+      ],
+
+      "settings": {
+        // Python設定
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.flake8Enabled": false,
+
+        // Ruff（新世代linter - 2025年推奨）
+        "ruff.enable": true,
+        "ruff.lint.run": "onSave",
+
+        // Black（フォーマッター）
+        "python.formatting.provider": "black",
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+
+        // MyPy（型チェック）
+        "mypy-type-checker.args": [
+          "--ignore-missing-imports",
+          "--follow-imports=silent"
+        ],
+
+        // テスト設定
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+
+        // SQLTools設定
+        "sqltools.connections": [
+          {
+            "name": "PostgreSQL Local",
+            "driver": "PostgreSQL",
+            "server": "db",
+            "port": 5432,
+            "database": "fastapi_db",
+            "username": "postgres",
+            "password": "postgres"
+          }
+        ],
+
+        // ファイル設定
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/.pytest_cache": true,
+          "**/.mypy_cache": true,
+          "**/.ruff_cache": true
+        }
+      }
+    }
+  },
+
+  // ライフサイクルコマンド
+  "postCreateCommand": "pip install -r requirements.txt -r requirements-dev.txt",
+  "postStartCommand": "echo '✅ FastAPI Dev Container is ready! Visit http://localhost:8000/docs for Swagger UI'",
+
+  // コンテナ内の実行ユーザー
+  "remoteUser": "root",
+
+  // VSCode終了時にDocker Composeを停止
+  "shutdownAction": "stopCompose"
+}

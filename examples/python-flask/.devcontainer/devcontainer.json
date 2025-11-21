@@ -1,0 +1,89 @@
+{
+  "name": "Python Flask Development",
+
+  // Docker Composeを使用
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+
+  // ポート転送
+  "forwardPorts": [5000, 5432],
+  "portsAttributes": {
+    "5000": {
+      "label": "Flask Application",
+      "onAutoForward": "notify"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // Dev Container Features
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+
+  // VSCodeカスタマイズ
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-azuretools.vscode-docker",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg"
+      ],
+
+      "settings": {
+        // Python設定
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+
+        // テスト設定
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+
+        // SQLTools設定
+        "sqltools.connections": [
+          {
+            "name": "PostgreSQL Local",
+            "driver": "PostgreSQL",
+            "server": "db",
+            "port": 5432,
+            "database": "flask_app",
+            "username": "postgres",
+            "password": "postgres"
+          }
+        ]
+      }
+    }
+  },
+
+  // ライフサイクルコマンド
+  "postCreateCommand": "pip install -r requirements.txt -r requirements-dev.txt",
+  "postStartCommand": "flask db upgrade",
+
+  // コンテナ内の実行ユーザー
+  "remoteUser": "root",
+
+  // VSCode終了時にDocker Composeを停止
+  "shutdownAction": "stopCompose"
+}

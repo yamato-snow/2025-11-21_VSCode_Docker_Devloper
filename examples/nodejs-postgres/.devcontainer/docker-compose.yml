@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # アプリケーション（開発環境）
+  # ==========================================
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: development  # developmentステージを使用
+
+    volumes:
+      # ソースコードのホットリロード
+      - ..:/workspace:cached
+      # node_modulesはボリュームで保持（パフォーマンス向上）
+      - node_modules:/workspace/node_modules
+
+    ports:
+      - "3000:3000"    # アプリケーション
+      - "9229:9229"    # デバッグ用
+
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/myapp
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=debug
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+    # 開発サーバー起動コマンド
+    command: npm run dev
+
+  # ==========================================
+  # PostgreSQLデータベース
+  # ==========================================
+  db:
+    image: postgres:16-alpine
+
+    ports:
+      - "5432:5432"
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: myapp
+
+    volumes:
+      # データ永続化
+      - postgres_data:/var/lib/postgresql/data
+      # 初期化スクリプト（任意）
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    # ヘルスチェック
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Redis（キャッシュ）
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+    # Redis設定
+    command: redis-server --appendonly yes
+
+# ==========================================
+# ボリューム定義
+# ==========================================
+volumes:
+  node_modules:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # Flaskアプリケーション（開発環境）
+  # ==========================================
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: development
+
+    volumes:
+      # ソースコードのホットリロード
+      - ..:/workspace:cached
+
+    ports:
+      - "5000:5000"
+
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/flask_app
+      - SECRET_KEY=dev_secret_key_change_in_production
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    command: flask run --host=0.0.0.0 --debug
+
+  # ==========================================
+  # PostgreSQLデータベース
+  # ==========================================
+  db:
+    image: postgres:16-alpine
+
+    ports:
+      - "5432:5432"
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: flask_app
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

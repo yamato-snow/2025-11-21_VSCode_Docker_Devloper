@@ -1,0 +1,25 @@
+# Flask本体
+Flask==3.0.0
+
+# データベース
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.9
+Flask-Migrate==4.0.5
+
+# 認証
+Flask-Login==0.6.3
+Flask-Bcrypt==1.0.1
+
+# API
+Flask-CORS==4.0.0
+Flask-RESTful==0.3.10
+
+# 環境変数管理
+python-dotenv==1.0.0
+
+# バリデーション
+Flask-WTF==1.2.1
+email-validator==2.1.0
+
+# 本番用サーバー
+gunicorn==21.2.0

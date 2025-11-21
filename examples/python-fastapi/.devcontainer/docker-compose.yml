@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # FastAPI アプリケーション（開発環境）
+  # ==========================================
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: development
+
+    volumes:
+      # ソースコードのホットリロード
+      - ..:/workspace:cached
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      # アプリケーション設定
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=debug
+
+      # データベース接続
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/fastapi_db
+
+      # Redis接続
+      - REDIS_URL=redis://redis:6379/0
+
+      # JWT設定（開発用）
+      - SECRET_KEY=dev_secret_key_change_in_production
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+      # CORS設定（Next.jsフロントエンド連携用）
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+    # 開発サーバー起動（ホットリロード有効）
+    command: fastapi dev main.py --host 0.0.0.0 --port 8000
+
+  # ==========================================
+  # PostgreSQLデータベース
+  # ==========================================
+  db:
+    image: postgres:16-alpine
+
+    ports:
+      - "5432:5432"
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fastapi_db
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Redis（キャッシュ・セッション管理）
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+  redis_data:

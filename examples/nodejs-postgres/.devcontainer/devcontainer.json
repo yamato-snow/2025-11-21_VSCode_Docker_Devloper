@@ -1,0 +1,105 @@
+{
+  "name": "Node.js Fullstack Development",
+
+  // Docker Composeを使用
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+
+  // ポート転送（ローカルからアクセス可能に）
+  "forwardPorts": [3000, 5432, 6379],
+  "portsAttributes": {
+    "3000": {
+      "label": "Application Server",
+      "onAutoForward": "notify"
+    },
+    "5432": {
+      "label": "PostgreSQL Database",
+      "onAutoForward": "silent"
+    },
+    "6379": {
+      "label": "Redis Cache",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // Dev Container Features（追加ツール）
+  "features": {
+    // GitHub CLI
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    // AWS CLI（必要に応じて）
+    // "ghcr.io/devcontainers/features/aws-cli:1": {
+    //   "version": "latest"
+    // }
+  },
+
+  // VSCodeカスタマイズ
+  "customizations": {
+    "vscode": {
+      // コンテナ内に自動インストールされる拡張機能
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "prisma.prisma",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-typescript-next"
+      ],
+
+      // エディタ設定
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+
+        // SQLTools設定（PostgreSQL接続）
+        "sqltools.connections": [
+          {
+            "name": "PostgreSQL Local",
+            "driver": "PostgreSQL",
+            "server": "db",
+            "port": 5432,
+            "database": "myapp",
+            "username": "postgres",
+            "password": "postgres"
+          }
+        ],
+
+        // ターミナル設定
+        "terminal.integrated.defaultProfile.linux": "bash",
+
+        // TypeScript設定
+        "typescript.updateImportsOnFileMove.enabled": "always",
+        "typescript.suggest.autoImports": true
+      }
+    }
+  },
+
+  // ライフサイクルコマンド
+  // コンテナ作成直後に1回だけ実行
+  "postCreateCommand": "npm install && npm run db:setup",
+
+  // コンテナ起動後に毎回実行
+  "postStartCommand": "npm run db:migrate",
+
+  // コンテナ接続後に実行
+  "postAttachCommand": "echo '✅ Dev Container is ready! Run: npm run dev'",
+
+  // コンテナ内の実行ユーザー
+  "remoteUser": "node",
+
+  // VSCode終了時にDocker Composeを停止
+  "shutdownAction": "stopCompose"
+}
