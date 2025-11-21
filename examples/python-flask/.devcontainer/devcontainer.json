@@ -7,13 +7,13 @@
   "workspaceFolder": "/workspace",
 
   // ポート転送
-  "forwardPorts": [5000, 5432],
+  "forwardPorts": [5001, 5433],
   "portsAttributes": {
-    "5000": {
+    "5001": {
       "label": "Flask Application",
       "onAutoForward": "notify"
     },
-    "5432": {
+    "5433": {
       "label": "PostgreSQL",
       "onAutoForward": "silent"
     }
@@ -67,7 +67,7 @@
             "name": "PostgreSQL Local",
             "driver": "PostgreSQL",
             "server": "db",
-            "port": 5432,
+            "port": 5433,
             "database": "flask_app",
             "username": "postgres",
             "password": "postgres"

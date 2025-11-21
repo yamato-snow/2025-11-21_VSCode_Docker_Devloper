@@ -170,7 +170,7 @@ Dev Containers拡張機能は、**Dockerコンテナを完全な開発環境と�
 {
   "name": "プロジェクト名",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
-  "forwardPorts": [3000, 5432],
+  "forwardPorts": [3000, 5433],
   "postCreateCommand": "npm install",
   "customizations": {
     "vscode": {
@@ -218,7 +218,7 @@ Dev Containers拡張機能は、**Dockerコンテナを完全な開発環境と�
 ```json
 {
   // 基本的なポート転送
-  "forwardPorts": [3000, 5432, 6379],
+  "forwardPorts": [3000, 5433, 6379],
 
   // ポートごとの詳細設定
   "portsAttributes": {
@@ -226,7 +226,7 @@ Dev Containers拡張機能は、**Dockerコンテナを完全な開発環境と�
       "label": "Application",
       "onAutoForward": "notify"  // ポート転送時に通知
     },
-    "5432": {
+    "5433": {
       "label": "PostgreSQL",
       "onAutoForward": "silent"   // 通知しない
     }
@@ -366,13 +366,13 @@ https://containers.dev/features
   "workspaceFolder": "/workspace",
 
   // ポート転送
-  "forwardPorts": [3000, 5432, 6379],
+  "forwardPorts": [3000, 5433, 6379],
   "portsAttributes": {
     "3000": {
       "label": "Application Server",
       "onAutoForward": "notify"
     },
-    "5432": {
+    "5433": {
       "label": "PostgreSQL Database"
     },
     "6379": {
@@ -1208,7 +1208,7 @@ services:
       - "9229:9229"  # デバッグ用
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/myapp
+      - DATABASE_URL=postgresql://postgres:postgres@db:5433/myapp
       - REDIS_URL=redis://redis:6379
     depends_on:
       db:
@@ -1221,7 +1221,7 @@ services:
   db:
     image: postgres:16-alpine
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -1264,13 +1264,13 @@ volumes:
   "workspaceFolder": "/workspace",
 
   // ポート転送（ローカルからアクセス可能に）
-  "forwardPorts": [3000, 5432, 6379],
+  "forwardPorts": [3000, 5433, 6379],
   "portsAttributes": {
     "3000": {
       "label": "Application",
       "onAutoForward": "notify"
     },
-    "5432": {
+    "5433": {
       "label": "PostgreSQL"
     },
     "6379": {
@@ -1310,7 +1310,7 @@ volumes:
             "name": "PostgreSQL",
             "driver": "PostgreSQL",
             "server": "db",
-            "port": 5432,
+            "port": 5433,
             "database": "myapp",
             "username": "postgres",
             "password": "postgres"
@@ -1436,7 +1436,7 @@ CMD ["flask", "run", "--host=0.0.0.0"]
     "dockerfile": "../Dockerfile",
     "target": "development"
   },
-  "forwardPorts": [5000],
+  "forwardPorts": [5001],
   "customizations": {
     "vscode": {
       "extensions": [

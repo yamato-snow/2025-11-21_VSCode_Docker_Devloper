@@ -7,13 +7,13 @@
   "workspaceFolder": "/workspace",
 
   // ポート転送
-  "forwardPorts": [8000, 5432, 6379],
+  "forwardPorts": [8000, 5433, 6379],
   "portsAttributes": {
     "8000": {
       "label": "FastAPI Server",
       "onAutoForward": "notify"
     },
-    "5432": {
+    "5433": {
       "label": "PostgreSQL",
       "onAutoForward": "silent"
     },
@@ -95,7 +95,7 @@
             "name": "PostgreSQL Local",
             "driver": "PostgreSQL",
             "server": "db",
-            "port": 5432,
+            "port": 5433,
             "database": "fastapi_db",
             "username": "postgres",
             "password": "postgres"

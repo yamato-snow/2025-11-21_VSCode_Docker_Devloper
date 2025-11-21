@@ -7,13 +7,13 @@
   "workspaceFolder": "/workspace",
 
   // ポート転送（ローカルからアクセス可能に）
-  "forwardPorts": [3000, 5432, 6379],
+  "forwardPorts": [3000, 5433, 6379],
   "portsAttributes": {
     "3000": {
       "label": "Application Server",
       "onAutoForward": "notify"
     },
-    "5432": {
+    "5433": {
       "label": "PostgreSQL Database",
       "onAutoForward": "silent"
     },
@@ -70,7 +70,7 @@
             "name": "PostgreSQL Local",
             "driver": "PostgreSQL",
             "server": "db",
-            "port": 5432,
+            "port": 5433,
             "database": "myapp",
             "username": "postgres",
             "password": "postgres"

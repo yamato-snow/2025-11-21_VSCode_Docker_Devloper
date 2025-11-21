@@ -105,17 +105,20 @@ class HealthResponse(BaseModel):
 # データベース（モック）
 # ==========================================
 # 実際のアプリケーションではSQLAlchemyやSQLModelを使用
-fake_users_db = {
-    "testuser": {
-        "id": 1,
-        "username": "testuser",
-        "email": "test@example.com",
-        "hashed_password": pwd_context.hash("password123"),
-        "is_active": True,
-    }
-}
-
+fake_users_db = {}
 fake_items_db: list[dict] = []
+
+
+def _initialize_fake_db():
+    """モックDBの初期化（起動時に実行）"""
+    if not fake_users_db:
+        fake_users_db["testuser"] = {
+            "id": 1,
+            "username": "testuser",
+            "email": "test@example.com",
+            "hashed_password": pwd_context.hash("password123"),
+            "is_active": True,
+        }
 
 # ==========================================
 # ユーティリティ関数
@@ -338,6 +341,9 @@ async def read_item(
 @app.on_event("startup")
 async def startup_event():
     """アプリケーション起動時の処理"""
+    # モックDBの初期化
+    _initialize_fake_db()
+
     print("=" * 60)
     print("FastAPI Backend API が起動しました！")
     print("=" * 60)

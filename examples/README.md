@@ -72,7 +72,7 @@ cp -r examples/nodejs-postgres/* /path/to/your/project/
 #### 4. 動作確認
 
 - アプリケーション: http://localhost:3000
-- PostgreSQL: `localhost:5432`
+- PostgreSQL: `localhost:5433`
 - Redis: `localhost:6379`
 
 ---
@@ -123,8 +123,8 @@ if __name__ == '__main__':
 
 #### 4. 動作確認
 
-- アプリケーション: http://localhost:5000
-- PostgreSQL: `localhost:5432`
+- アプリケーション: http://localhost:5001
+- PostgreSQL: `localhost:5433`
 
 ---
 
@@ -175,7 +175,7 @@ cp -r examples/python-fastapi/* /path/to/your/project/
 - **Swagger UI**: http://localhost:8000/docs （インタラクティブなAPI テスト）
 - **ReDoc**: http://localhost:8000/redoc （きれいなAPIドキュメント）
 - **ヘルスチェック**: http://localhost:8000/health
-- **PostgreSQL**: `localhost:5432`
+- **PostgreSQL**: `localhost:5433`
 - **Redis**: `localhost:6379`
 
 #### 5. APIの試し方（Swagger UIで）
@@ -260,7 +260,7 @@ const response = await fetch('http://localhost:8000/users/me', {
 `.devcontainer/devcontainer.json` の `forwardPorts` を編集：
 
 ```json
-"forwardPorts": [3000, 5432, 6379],
+"forwardPorts": [3000, 5433, 6379],
 ```
 
 ### 2. VSCode拡張機能の追加
@@ -339,8 +339,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 docker build --target production -t flask-app:latest .
 
 # 2. 本番起動（Gunicorn使用）
-docker run -d -p 5000:5000 \
-  -e DATABASE_URL=postgresql://user:pass@host:5432/db \
+docker run -d -p 5001:5000 \
+  -e DATABASE_URL=postgresql://user:pass@host:5433/db \
   flask-app:latest
 ```
 
@@ -352,7 +352,7 @@ docker build --target production -t fastapi-app:latest .
 
 # 2. 本番環境でのテスト起動
 docker run -d -p 8000:8000 \
-  -e DATABASE_URL=postgresql://user:pass@host:5432/db \
+  -e DATABASE_URL=postgresql://user:pass@host:5433/db \
   -e REDIS_URL=redis://redis:6379 \
   -e SECRET_KEY=your_production_secret \
   fastapi-app:latest

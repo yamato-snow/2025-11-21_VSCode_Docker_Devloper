@@ -27,13 +27,16 @@ RUN apt-get update && apt-get install -y \
 # グローバルツールのインストール
 RUN npm install -g typescript ts-node nodemon
 
-# パッケージファイルのコピー
+# パッケージファイルのコピー（存在する場合）
+# Dev Containersではボリュームマウントで上書きされるため、
+# 初回ビルド時のみ有効
 COPY package*.json ./
 
 # 開発用依存関係を含めてインストール
-RUN npm install
+# Dev Containersの場合は postCreateCommand で再実行される
+RUN npm install || echo "npm install failed, will retry in postCreateCommand"
 
-# ソースコードのコピー
+# ソースコードのコピー（ボリュームマウントで上書きされる）
 COPY . .
 
 # 開発用ポート
@@ -41,6 +44,8 @@ EXPOSE 3000
 EXPOSE 9229
 
 # ホットリロード対応のコマンド
+# Dev Containersではこのコマンドは使用されず、
+# docker-compose.ymlの command が優先される
 CMD ["npm", "run", "dev"]
 
 # ==========================================
