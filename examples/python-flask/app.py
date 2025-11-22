@@ -496,25 +496,23 @@ def internal_error(error):
 # 起動時の情報表示
 # ==========================================
 
-@app.before_request
-def before_first_request():
-    """最初のリクエスト前に実行"""
-    if not hasattr(app, '_startup_message_displayed'):
-        print("=" * 60)
-        print("Flask Backend API が起動しました！")
-        print("=" * 60)
-        print(f"Health Check: http://localhost:5000/health")
-        print(f"API Endpoints: http://localhost:5000/")
-        print("-" * 60)
-        print("データベース初期化:")
-        print("  python init_db.py を実行してください")
-        print("")
-        print("デフォルトユーザー (init_db.py実行後):")
-        print("  username: testuser")
-        print("  password: password123")
-        print("=" * 60)
-        app._startup_message_displayed = True
+def print_startup_message():
+    """起動メッセージを表示"""
+    print("=" * 60)
+    print("Flask Backend API が起動しました！")
+    print("=" * 60)
+    print(f"Health Check: http://localhost:5000/health")
+    print(f"API Endpoints: http://localhost:5000/")
+    print("-" * 60)
+    print("データベース初期化:")
+    print("  python init_db.py を実行してください")
+    print("")
+    print("デフォルトユーザー (init_db.py実行後):")
+    print("  username: testuser")
+    print("  password: password123")
+    print("=" * 60)
 
 
 if __name__ == '__main__':
+    print_startup_message()
     app.run(host='0.0.0.0', port=5000, debug=True)

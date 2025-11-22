@@ -4,11 +4,11 @@ import UserList from './components/UserList';
 import ItemList from './components/ItemList';
 import { isAuthenticated, logout, getCurrentUser, User } from './api';
 
-type Tab = 'user' | 'items';
+type Tab = 'users' | 'items';
 
 export default function App() {
   const [authenticated, setAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>('user');
+  const [activeTab, setActiveTab] = useState<Tab>('users');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -90,17 +90,17 @@ export default function App() {
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             <button
-              onClick={() => setActiveTab('user')}
+              onClick={() => setActiveTab('users')}
               className={`
                 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
                 ${
-                  activeTab === 'user'
+                  activeTab === 'users'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }
               `}
             >
-              ユーザー情報
+              ユーザー一覧
             </button>
             <button
               onClick={() => setActiveTab('items')}
@@ -121,7 +121,7 @@ export default function App() {
 
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'user' && <UserList />}
+        {activeTab === 'users' && <UserList />}
         {activeTab === 'items' && <ItemList />}
       </main>
 

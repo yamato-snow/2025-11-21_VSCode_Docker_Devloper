@@ -8,6 +8,7 @@ React（Vite）フロントエンド連携を想定したバックエンドAPI
 - Health Check: http://localhost:8000/health
 """
 
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Annotated
 
@@ -35,7 +36,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 # CORS設定（環境変数から取得）
 CORS_ORIGINS_STR = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:3001"
+    "http://localhost:5173,http://localhost:3000,http://localhost:3001"
 )
 CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS_STR.split(",")]
 
@@ -184,6 +185,36 @@ async def get_current_active_user(
 
 
 # ==========================================
+# ライフサイクル管理
+# ==========================================
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """アプリケーションのライフサイクル管理"""
+    # スタートアップ処理
+    print("=" * 60)
+    print("FastAPI Backend API が起動しました！")
+    print("=" * 60)
+    print(f"Swagger UI: http://localhost:8000/docs")
+    print(f"ReDoc: http://localhost:8000/redoc")
+    print(f"Health Check: http://localhost:8000/health")
+    print("-" * 60)
+    print("データベース初期化:")
+    print("  python init_db.py を実行してください")
+    print("")
+    print("デフォルトユーザー (init_db.py実行後):")
+    print("  username: testuser")
+    print("  password: password123")
+    print("-" * 60)
+    print(f"CORS Origins: {CORS_ORIGINS}")
+    print(f"Database URL: {DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')}")
+    print("=" * 60)
+
+    yield
+
+    # シャットダウン処理（必要に応じて追加）
+
+
+# ==========================================
 # FastAPIアプリケーション
 # ==========================================
 app = FastAPI(
@@ -192,6 +223,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",  # Swagger UI
     redoc_url="/redoc",  # ReDoc
+    lifespan=lifespan,
 )
 
 # ==========================================
@@ -340,31 +372,6 @@ async def read_item(
             detail="Item not found",
         )
     return db_item
-
-
-# ==========================================
-# 起動時の情報表示
-# ==========================================
-@app.on_event("startup")
-async def startup_event():
-    """アプリケーション起動時の処理"""
-    print("=" * 60)
-    print("FastAPI Backend API が起動しました！")
-    print("=" * 60)
-    print(f"Swagger UI: http://localhost:8000/docs")
-    print(f"ReDoc: http://localhost:8000/redoc")
-    print(f"Health Check: http://localhost:8000/health")
-    print("-" * 60)
-    print("データベース初期化:")
-    print("  python init_db.py を実行してください")
-    print("")
-    print("デフォルトユーザー (init_db.py実行後):")
-    print("  username: testuser")
-    print("  password: password123")
-    print("-" * 60)
-    print(f"CORS Origins: {CORS_ORIGINS}")
-    print(f"Database URL: {DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')}")
-    print("=" * 60)
 
 
 if __name__ == "__main__":

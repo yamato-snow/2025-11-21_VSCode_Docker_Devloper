@@ -126,6 +126,6 @@ async def delete_item(db: AsyncSession, item_id: int):
     if not db_item:
         return None
 
-    await db.delete(db_item)
+    db.delete(db_item)
     await db.commit()
     return db_item
