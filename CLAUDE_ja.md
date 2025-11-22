@@ -36,7 +36,7 @@ examples/
 # 3. 初回ビルドを待つ（初回は5〜10分）
 ```
 
-### Node.js (Next.js) サンプル
+### Node.js (React.js) サンプル
 
 **場所:** `examples/nodejs-postgres/`
 
@@ -142,7 +142,7 @@ docker build --target production -t fastapi-app:latest .
 
 **主要な設定:**
 - Pylintの代わりにRuff（2025年推奨linter）を使用
-- Next.js連携用のCORS設定済み（ポート3000, 3001）
+- React.js連携用のCORS設定済み（ポート3000, 3001）
 - JWT認証のサンプル実装
 - リクエスト/レスポンス検証にPydantic V2を使用
 
@@ -220,7 +220,7 @@ FROM base AS production
 
 ### フロントエンド-バックエンド連携のためのCORS設定
 
-FastAPIサンプルはNext.js連携のための適切なCORS設定を実装：
+FastAPIサンプルはReact.js連携のための適切なCORS設定を実装：
 
 ```python
 # main.py
@@ -236,7 +236,7 @@ app.add_middleware(
 
 **フルスタック開発のワークフロー:**
 1. FastAPIバックエンドを1つのVSCodeウィンドウで起動（ポート8000）
-2. Next.jsフロントエンドを別のVSCodeウィンドウで起動（ポート3000）
+2. React.jsフロントエンドを別のVSCodeウィンドウで起動（ポート3000）
 3. フロントエンドから`http://localhost:8000/api/*`でバックエンドを呼び出し
 
 ## Dev Container設定パターン
@@ -398,7 +398,7 @@ docker compose exec db psql -U postgres -d fastapi_db -c "SELECT * FROM items;"
 ## ポート規約
 
 サンプル全体で標準化：
-- **3000**: Node.js/Next.jsフロントエンド
+- **3000**: Node.js/React.jsフロントエンド
 - **5001**: Flaskバックエンド（ホスト側）、5000（コンテナ内）
 - **8000**: FastAPIバックエンド
 - **5433**: PostgreSQL（ホスト側）、5432（コンテナ内）

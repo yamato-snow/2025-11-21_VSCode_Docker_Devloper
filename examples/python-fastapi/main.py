@@ -1,6 +1,6 @@
 """
 FastAPI サンプルアプリケーション
-Node.js（Next.js）フロントエンド連携を想定したバックエンドAPI
+React（Vite）フロントエンド連携を想定したバックエンドAPI
 
 動作確認:
 - Swagger UI: http://localhost:8000/docs
@@ -188,14 +188,14 @@ async def get_current_active_user(
 # ==========================================
 app = FastAPI(
     title="FastAPI Backend API",
-    description="Node.js（Next.js）フロントエンド連携を想定したバックエンドAPI",
+    description="React（Vite）フロントエンド連携を想定したバックエンドAPI",
     version="1.0.0",
     docs_url="/docs",  # Swagger UI
     redoc_url="/redoc",  # ReDoc
 )
 
 # ==========================================
-# CORS設定（Next.jsフロントエンド連携用）
+# CORS設定（React + Viteフロントエンド連携用）
 # ==========================================
 app.add_middleware(
     CORSMiddleware,

@@ -912,7 +912,7 @@ public class UserController {
 6. ✅ **市場価値**: 求人150%増、エンタープライズ採用拡大
 
 **他フレームワークが適している場合：**
-- **Express.js/NestJS**: フロントエンド（Next.js）と言語統一したい
+- **Express.js**: フロントエンド（React.js）と言語統一したい
 - **Spring Boot**: 既存のJavaエコシステムに統合
 - **Go/Rust**: 極限のパフォーマンスが必要（インフラレイヤー）
 - **Laravel**: PHP既存資産の活用
@@ -985,7 +985,7 @@ Python（特にFastAPI）は、2025年時点で**最もバランスの取れた�
 
 ---
 
-### Node.js（React/Next.js）フロントエンドとの連携
+### Node.js（React/React.js）フロントエンドとの連携
 
 #### CORS設定（FastAPI）
 
@@ -995,9 +995,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# CORS設定（Next.jsフロントエンド連携用）
+# CORS設定（React.jsフロントエンド連携用）
 origins = [
-    "http://localhost:3000",  # Next.js開発サーバー
+    "http://localhost:3000",  # React.js開発サーバー
     "http://localhost:3001",
 ]
 
@@ -1010,11 +1010,11 @@ app.add_middleware(
 )
 ```
 
-#### Next.js側のAPIクライアント
+#### React.js側のAPIクライアント
 
 ```typescript
 // lib/api.ts
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.React_PUBLIC_API_URL || 'http://localhost:8000';
 
 export async function fetchAPI<T>(
   endpoint: string,
@@ -1047,7 +1047,7 @@ npx openapi-typescript http://localhost:8000/openapi.json -o types/api.ts
 ```
 
 ```typescript
-// Next.js側で使用
+// React.js側で使用
 import type { components } from './types/api';
 
 type User = components['schemas']['User'];
@@ -1485,7 +1485,7 @@ examples/python-fastapi/
 - ✅ JWT認証（バックエンド - Bearer トークン）
 - ✅ Pydantic V2による型安全なバリデーション
 - ✅ 自動生成されるAPI ドキュメント（Swagger UI / ReDoc）
-- ✅ CORS設定済み（React Vite + Next.js連携対応）
+- ✅ CORS設定済み（React Vite + React.js連携対応）
 - ✅ Ruff linter（2025年推奨）
 
 **セットアップ手順:**
@@ -2049,7 +2049,7 @@ pip list  # Python
 | **Dev Containers** | コンテナ内で開発 | 日常の開発作業 |
 | **Docker** | Dockerを管理 | コンテナ・イメージの操作、デバッグ |
 
-### Next Steps
+### React Steps
 
 1. **今すぐ試す:**
    - Docker Desktopをインストール

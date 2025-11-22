@@ -639,8 +639,8 @@ React Vite フロントエンドとの連携用にCORSが設定済みです。
 ```python
 CORS_ORIGINS = [
   "http://localhost:5173",  # Vite開発サーバー
-  "http://localhost:3000",  # Next.js (オプション)
-  "http://localhost:3001"   # Next.js (オプション)
+  "http://localhost:3000",  # React.js (オプション)
+  "http://localhost:3001"   # React.js (オプション)
 ]
 ```
 

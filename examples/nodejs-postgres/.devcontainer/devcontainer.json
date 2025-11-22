@@ -51,7 +51,7 @@
         "mtxr.sqltools",
         "mtxr.sqltools-driver-pg",
         "bradlc.vscode-tailwindcss",
-        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-typescript-React",
         "dsznajder.es7-react-js-snippets",
         "formulahendry.auto-rename-tag"
       ],

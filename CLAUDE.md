@@ -264,7 +264,7 @@ docker build --target production -t fastapi-app:latest .
 - **Frontend**: React 19 + Vite 6 + TypeScript + Tailwind CSS
 - **JWT Authentication UI**: Login/signup forms, auth guards, token management
 - Uses Ruff (2025 recommended linter) instead of Pylint
-- CORS preconfigured for React Vite (port 5173) + Next.js (ports 3000, 3001)
+- CORS preconfigured for React Vite (port 5173) + React.js (ports 3000, 3001)
 - JWT authentication fully integrated (backend + frontend)
 - Pydantic V2 for request/response validation
 - Node.js 20.x installed in dev container for npm/React support
@@ -351,7 +351,7 @@ Each example has two compose files:
 
 ### CORS Configuration for Frontend-Backend Integration
 
-The FastAPI example demonstrates proper CORS setup for Next.js integration:
+The FastAPI example demonstrates proper CORS setup for React.js integration:
 
 ```python
 # main.py
@@ -367,7 +367,7 @@ app.add_middleware(
 
 **Workflow for fullstack development:**
 1. Start FastAPI backend in one VSCode window (port 8000)
-2. Start Next.js frontend in another VSCode window (port 3000)
+2. Start React.js frontend in another VSCode window (port 3000)
 3. Frontend calls backend via `http://localhost:8000/api/*`
 
 ## Dev Container Configuration Patterns
