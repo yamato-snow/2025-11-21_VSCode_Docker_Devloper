@@ -36,17 +36,20 @@ All example projects use Dev Containers. Common workflow:
 # 3. Wait for initial build (5-10 minutes first time)
 ```
 
-### Node.js (Next.js) Example
+### Node.js (Express + React) Example
 
 **Location:** `examples/nodejs-postgres/`
 
-**Services:** app (port 3000), PostgreSQL (port 5433), Redis (port 6379)
+**Services:** app (port 3000, 5173), PostgreSQL (port 5433), Redis (port 6379)
 
 ```bash
-# Development
-npm run dev              # Start development server
-npm run db:setup         # Initial database setup
-npm run db:migrate       # Run migrations
+# Development (auto-starts via devcontainer)
+npm run dev              # Start backend + frontend
+npm run server:dev       # Backend only (Express + TypeScript)
+npm run client:dev       # Frontend only (React + Vite)
+
+# Database setup (node init-db.js)
+npm run db:setup         # Initialize database with Node.js script
 
 # Production build test
 docker build --target production -t myapp:latest .
@@ -56,8 +59,44 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 **Key Configuration:**
 - devcontainer.json: Uses docker-compose.yml in `.devcontainer/`
 - Multi-stage Dockerfile with `development` and `production` targets
-- PostCreateCommand: `npm install && npm run db:setup`
-- PostStartCommand: `npm run db:migrate`
+- Database initialization: `init-db.js` (Node.js script using `pg` package)
+- PostCreateCommand: `npm run db:setup` (database initialization only)
+- Auto-start: docker-compose.yml `command: sh -c "npm install && npm run dev"`
+- remoteUser: `root` (python-fastapiと統一)
+- Volume mount: Direct bind mount without node_modules volume (python-fastapiと統一)
+
+**Database Integration:**
+- Real PostgreSQL database with `pg` package
+- Database models: User, Item tables (defined in `src/index.ts`)
+- Initialization script: `init-db.js` (Node.js script, not psql command)
+- Default credentials: username=testuser, password=password123
+
+**API Endpoints:**
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Database connection test
+curl http://localhost:3000/db
+
+# Redis connection test
+curl http://localhost:3000/redis
+
+# Users API
+curl http://localhost:3000/api/users
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user1","email":"user1@example.com","password":"pass123"}'
+
+# Items API
+curl http://localhost:3000/api/items
+curl -X POST http://localhost:3000/api/items \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Item 1","description":"Description","price":99.99,"owner_id":1}'
+
+# Frontend (React + Vite)
+# Open browser: http://localhost:5173
+```
 
 ### Python Flask Example
 
@@ -342,15 +381,23 @@ docker build --target production -t test:latest .
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 docker compose logs -f
 
-# 4. Test database initialization (FastAPI only)
-python init_db.py
+# 4. Test database initialization
+# Node.js: npm run db:setup (or node init-db.js)
+# FastAPI: python init_db.py
+# Flask: python init_db.py
 
 # 5. Test endpoints
-# Node.js: curl http://localhost:3000
-# Flask: curl http://localhost:5001/health
+# Node.js: curl http://localhost:3000/health
+# Flask: curl http://localhost:5000/health
 # FastAPI: curl http://localhost:8000/health
 
-# 6. Test FastAPI user creation
+# 6. Test user creation
+# Node.js:
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","email":"test@test.com","password":"password123"}'
+
+# FastAPI:
 curl -X POST "http://localhost:8000/users" \
   -H "Content-Type: application/json" \
   -d '{"email":"test@test.com","username":"testuser2","password":"password123"}'
@@ -375,6 +422,23 @@ docker compose exec db psql -U postgres
 **VSCode SQLTools integration:**
 All devcontainer.json files include SQLTools configuration for GUI database access within VSCode.
 
+**Node.js Database Operations:**
+```bash
+# Initialize database (create tables + test data)
+npm run db:setup
+# or
+node init-db.js
+
+# Check tables in PostgreSQL
+docker compose exec db psql -U postgres -d myapp -c "\dt"
+
+# View users table
+docker compose exec db psql -U postgres -d myapp -c "SELECT * FROM users;"
+
+# View items table
+docker compose exec db psql -U postgres -d myapp -c "SELECT * FROM items;"
+```
+
 **FastAPI Database Operations:**
 ```bash
 # Initialize database (create tables + test data)
@@ -390,10 +454,11 @@ docker compose exec db psql -U postgres -d fastapi_db -c "SELECT * FROM users;"
 docker compose exec db psql -U postgres -d fastapi_db -c "SELECT * FROM items;"
 ```
 
-**Migration pattern:**
-- Node.js: Custom migrations in `npm run db:migrate`
-- Python FastAPI: Manual initialization with `init_db.py` (Alembic can be added for production)
-- Python Flask: Typically uses Alembic (not included in basic examples)
+**Database Initialization Pattern (Unified):**
+- **Node.js**: `init-db.js` - Node.js script using `pg` package (no psql command)
+- **Python FastAPI**: `init_db.py` - Python async script with SQLAlchemy
+- **Python Flask**: `init_db.py` - Python script with Flask-SQLAlchemy
+- **Common approach**: All use language-native database clients with DATABASE_URL environment variable (no manual password entry)
 
 ## Port Conventions
 
@@ -466,6 +531,28 @@ F1 → "Dev Containers: Clone Repository in Container Volume"
 - Verify `depends_on` with `condition: service_healthy` in docker-compose.yml
 - Check database container started: `docker compose ps db`
 - Confirm correct service name in DATABASE_URL (use service name, not `localhost`)
+
+### Database tables not found (relation "users" does not exist)
+
+**Error:** `error: relation "users" does not exist` when accessing API endpoints
+
+**Cause:** Database initialization script (`init-db.js` or `init_db.py`) was not executed
+
+**Solution:**
+```bash
+# Node.js example - Manually run database setup
+docker exec nodejs-postgres_devcontainer-app-1 npm run db:setup
+
+# Python FastAPI example
+docker exec python-fastapi_devcontainer-api-1 python init_db.py
+
+# Or rebuild container (will trigger postCreateCommand)
+F1 → "Dev Containers: Rebuild Container"
+```
+
+**Prevention:** Ensure `postCreateCommand` is set correctly in devcontainer.json:
+- Node.js: `"postCreateCommand": "npm run db:setup"`
+- FastAPI: `"postCreateCommand": "pip install -r requirements.txt && python init_db.py"`
 
 ## Modifying Examples for New Projects
 

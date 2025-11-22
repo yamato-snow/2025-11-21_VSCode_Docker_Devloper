@@ -94,17 +94,17 @@
   },
 
   // ライフサイクルコマンド
-  // コンテナ作成直後に1回だけ実行
-  "postCreateCommand": "npm install && npm run db:setup",
+  // コンテナ作成直後に1回だけ実行（データベース初期化）
+  "postCreateCommand": "npm run db:setup",
 
   // コンテナ起動後に毎回実行
-  "postStartCommand": "npm run db:migrate",
+  "postStartCommand": "echo '🔄 Container started. npm run dev is running automatically.'",
 
   // コンテナ接続後に実行
-  "postAttachCommand": "echo '✅ Dev Container is ready! Run: npm run dev (Backend + Frontend)'",
+  "postAttachCommand": "echo '✅ Dev Container is ready!\n🚀 Backend + Frontend auto-started\n🔗 Backend: http://localhost:3000\n⚛️  Frontend: http://localhost:5173'",
 
   // コンテナ内の実行ユーザー
-  "remoteUser": "node",
+  "remoteUser": "root",
 
   // VSCode終了時にDocker Composeを停止
   "shutdownAction": "stopCompose"

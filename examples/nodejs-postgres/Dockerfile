@@ -44,9 +44,7 @@ EXPOSE 3000
 EXPOSE 5173
 EXPOSE 9229
 
-# ホットリロード対応のコマンド
-# Dev Containersではこのコマンドは使用されず、
-# docker-compose.ymlの command が優先される
+# デフォルトコマンド（docker-compose.ymlで上書きされる）
 CMD ["npm", "run", "dev"]
 
 # ==========================================
