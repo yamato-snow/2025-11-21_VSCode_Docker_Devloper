@@ -22,7 +22,7 @@ export default function App() {
         const user = await getCurrentUser();
         setCurrentUser(user);
         setAuthenticated(true);
-      } catch (error) {
+      } catch {
         // トークンが無効な場合
         setAuthenticated(false);
         setCurrentUser(null);

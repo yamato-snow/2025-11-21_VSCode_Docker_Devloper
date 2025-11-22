@@ -91,7 +91,7 @@ export default function UserList() {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(user.created_at).toLocaleString('ja-JP')}
+                  {user.created_at ? new Date(user.created_at).toLocaleString('ja-JP') : 'N/A'}
                 </td>
               </tr>
             ))}

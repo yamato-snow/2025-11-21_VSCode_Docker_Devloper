@@ -61,6 +61,11 @@ npm run db:setup         # Initialize database with Node.js script
 # Production build test
 docker build --target production -t myapp:latest .
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Code Quality & Type Checking
+npm run type-check       # TypeScript type checking (no emit)
+npm run lint             # Run ESLint on all files
+npm run lint:fix         # Auto-fix ESLint issues
 ```
 
 **Key Configuration:**
@@ -164,6 +169,11 @@ npm run dev
 
 # Production build test
 docker build --target production -t flask-app:latest .
+
+# Code Quality & Type Checking (Frontend)
+npm run type-check       # TypeScript type checking (no emit)
+npm run lint             # Run ESLint on React frontend
+npm run lint:fix         # Auto-fix ESLint issues
 ```
 
 **Key Configuration:**
@@ -258,6 +268,11 @@ npm run dev
 
 # Production build test
 docker build --target production -t fastapi-app:latest .
+
+# Code Quality & Type Checking (Frontend)
+npm run type-check       # TypeScript type checking (no emit)
+npm run lint             # Run ESLint on React frontend
+npm run lint:fix         # Auto-fix ESLint issues
 ```
 
 **Key Configuration:**
@@ -477,6 +492,11 @@ docker compose logs -f
 # Node.js: npm run db:setup (or node init-db.js)
 # FastAPI: python init_db.py
 # Flask: python init_db.py
+
+# 4.5. Run code quality checks
+# All projects (Frontend):
+npm run type-check       # TypeScript type checking
+npm run lint             # ESLint code quality check
 
 # 5. Test frontend (React projects)
 # Node.js: Open http://localhost:5173

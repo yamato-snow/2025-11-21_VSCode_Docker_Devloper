@@ -232,6 +232,9 @@ curl http://localhost:3000/api/items
 | `npm start` | ビルド済みアプリを起動（本番用） |
 | `npm run db:setup` | **データベース初期化**（`init-db.js`実行 - Node.jsスクリプト） |
 | `npm run db:migrate` | データベースマイグレーション |
+| **`npm run type-check`** | **TypeScript型チェック**（client/tsconfig.app.jsonを使用） |
+| **`npm run lint`** | **ESLintコード品質チェック**（全ファイル） |
+| **`npm run lint:fix`** | **ESLint自動修正**（フォーマット＋ルール適用） |
 
 ## 🔌 サービス構成
 
@@ -276,6 +279,70 @@ Dev Container内に以下のツールが自動インストールされます:
 - **Tailwind CSS IntelliSense** - Tailwind CSS補完
 - **ES7 React/Redux Snippets** - Reactスニペット
 - **Auto Rename Tag** - HTMLタグ自動リネーム
+
+## 🎨 コード品質管理
+
+このプロジェクトでは、コードの品質と一貫性を保つために以下のツールを使用しています。
+
+### ESLint (TypeScript + React)
+
+モダンなFlat Config形式（ESLint 9+）を採用し、TypeScriptとReactのベストプラクティスを適用します。
+
+**設定ファイル:** `eslint.config.js`
+
+**主な機能:**
+- TypeScript ESLint統合
+- React Hooks ルール適用
+- React Refresh対応
+- 未使用変数の検出（`_`プレフィックスで除外可能）
+
+**使用方法:**
+
+```bash
+# コード品質チェック
+npm run lint
+
+# 自動修正
+npm run lint:fix
+
+# VSCodeでは保存時に自動フォーマット（Prettier統合）
+```
+
+### TypeScript型チェック
+
+TypeScriptコンパイラを使用して型エラーを検出します（ビルドなし）。
+
+```bash
+# 型チェック実行
+npm run type-check
+
+# 出力例（エラーがある場合）
+client/src/components/Login.tsx:42:15 - error TS2339: Property 'name' does not exist on type 'User'.
+```
+
+### Prettier (コードフォーマッター)
+
+VSCode拡張機能として統合され、保存時に自動フォーマットされます。
+
+**設定:** `.devcontainer/devcontainer.json` で自動フォーマット有効化済み
+
+### 開発ワークフロー
+
+コミット前の推奨フロー:
+
+```bash
+# 1. 型チェック
+npm run type-check
+
+# 2. Lintチェック＋自動修正
+npm run lint:fix
+
+# 3. ビルド確認
+npm run build
+
+# 4. テスト（各エンドポイント）
+curl http://localhost:3000/health
+```
 
 ## 🔧 データベース接続
 

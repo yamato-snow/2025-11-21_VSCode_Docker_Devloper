@@ -102,7 +102,7 @@ async function authenticateToken(req: Request, res: Response, next: NextFunction
     // リクエストにユーザー情報を追加
     (req as AuthRequest).user = user;
     next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
