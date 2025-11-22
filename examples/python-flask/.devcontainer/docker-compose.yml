@@ -19,7 +19,7 @@ services:
       - FLASK_APP=app.py
       - FLASK_ENV=development
       - FLASK_DEBUG=1
-      - DATABASE_URL=postgresql://postgres:postgres@db:5433/flask_app
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/flask_app
       - SECRET_KEY=dev_secret_key_change_in_production
 
     depends_on:

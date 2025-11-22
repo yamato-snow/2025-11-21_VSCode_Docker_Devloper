@@ -17,7 +17,13 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 import os
+
+# データベース関連のインポート
+from database import get_db, DATABASE_URL
+import crud
+import models
 
 # ==========================================
 # 設定
@@ -102,23 +108,11 @@ class HealthResponse(BaseModel):
 
 
 # ==========================================
-# データベース（モック）
+# データベース（PostgreSQL + SQLAlchemy）
 # ==========================================
-# 実際のアプリケーションではSQLAlchemyやSQLModelを使用
-fake_users_db = {}
-fake_items_db: list[dict] = []
-
-
-def _initialize_fake_db():
-    """モックDBの初期化（起動時に実行）"""
-    if not fake_users_db:
-        fake_users_db["testuser"] = {
-            "id": 1,
-            "username": "testuser",
-            "email": "test@example.com",
-            "hashed_password": pwd_context.hash("password123"),
-            "is_active": True,
-        }
+# データベース接続は database.py で設定
+# モデル定義は models.py
+# CRUD操作は crud.py
 
 # ==========================================
 # ユーティリティ関数
@@ -133,20 +127,12 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def get_user(username: str):
-    """ユーザー取得（DB）"""
-    if username in fake_users_db:
-        user_dict = fake_users_db[username]
-        return user_dict
-    return None
-
-
-def authenticate_user(username: str, password: str):
+async def authenticate_user(db: AsyncSession, username: str, password: str):
     """ユーザー認証"""
-    user = get_user(username)
+    user = await crud.get_user_by_username(db, username)
     if not user:
         return False
-    if not verify_password(password, user["hashed_password"]):
+    if not verify_password(password, user.hashed_password):
         return False
     return user
 
@@ -163,7 +149,10 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
     """現在のユーザー取得（依存関数）"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -179,17 +168,17 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     except JWTError:
         raise credentials_exception
 
-    user = get_user(username=token_data.username)
+    user = await crud.get_user_by_username(db, username=token_data.username)
     if user is None:
         raise credentials_exception
     return user
 
 
 async def get_current_active_user(
-    current_user: Annotated[dict, Depends(get_current_user)]
+    current_user: Annotated[models.User, Depends(get_current_user)]
 ):
     """アクティブユーザー取得（依存関数）"""
-    if not current_user.get("is_active"):
+    if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
@@ -242,7 +231,10 @@ async def health_check():
 
 
 @app.post("/token", response_model=Token, tags=["Authentication"])
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+async def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
     """
     ログインエンドポイント（JWT トークン発行）
 
@@ -250,7 +242,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     - username: testuser
     - password: password123
     """
-    user = authenticate_user(form_data.username, form_data.password)
+    user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -259,80 +251,95 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user["username"]}, expires_delta=access_token_expires
+        data={"sub": user.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
 
 
 @app.get("/users/me", response_model=User, tags=["Users"])
 async def read_users_me(
-    current_user: Annotated[dict, Depends(get_current_active_user)]
+    current_user: Annotated[models.User, Depends(get_current_active_user)]
 ):
     """現在のユーザー情報取得（認証必須）"""
-    return User(**current_user)
+    return current_user
 
 
 @app.post("/users", response_model=User, status_code=status.HTTP_201_CREATED, tags=["Users"])
-async def create_user(user: UserCreate):
+async def create_user(
+    user: UserCreate,
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
     """ユーザー登録"""
-    if user.username in fake_users_db:
+    # ユーザー名の重複チェック
+    existing_user = await crud.get_user_by_username(db, user.username)
+    if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered",
         )
 
+    # メールアドレスの重複チェック
+    existing_email = await crud.get_user_by_email(db, user.email)
+    if existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    # ユーザー作成
     hashed_password = get_password_hash(user.password)
-    new_user_id = len(fake_users_db) + 1
-    user_dict = {
-        "id": new_user_id,
-        "username": user.username,
-        "email": user.email,
-        "hashed_password": hashed_password,
-        "is_active": True,
-    }
-    fake_users_db[user.username] = user_dict
-    return User(**user_dict)
+    db_user = await crud.create_user(
+        db=db,
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_password,
+    )
+    return db_user
 
 
 @app.get("/items", response_model=list[Item], tags=["Items"])
 async def read_items(
     skip: int = 0,
     limit: int = 10,
-    current_user: Annotated[dict, Depends(get_current_active_user)] = None,
+    current_user: Annotated[models.User, Depends(get_current_active_user)] = None,
+    db: Annotated[AsyncSession, Depends(get_db)] = None,
 ):
     """アイテム一覧取得（認証必須）"""
-    return fake_items_db[skip : skip + limit]
+    items = await crud.get_items(db, skip=skip, limit=limit)
+    return items
 
 
 @app.post("/items", response_model=Item, status_code=status.HTTP_201_CREATED, tags=["Items"])
 async def create_item(
     item: ItemCreate,
-    current_user: Annotated[dict, Depends(get_current_active_user)],
+    current_user: Annotated[models.User, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """アイテム作成（認証必須）"""
-    new_item_id = len(fake_items_db) + 1
-    item_dict = {
-        "id": new_item_id,
-        "owner_id": current_user["id"],
-        **item.model_dump(),
-    }
-    fake_items_db.append(item_dict)
-    return Item(**item_dict)
+    db_item = await crud.create_item(
+        db=db,
+        title=item.title,
+        description=item.description,
+        price=item.price,
+        owner_id=current_user.id,
+    )
+    return db_item
 
 
 @app.get("/items/{item_id}", response_model=Item, tags=["Items"])
 async def read_item(
     item_id: int,
-    current_user: Annotated[dict, Depends(get_current_active_user)],
+    current_user: Annotated[models.User, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """アイテム詳細取得（認証必須）"""
-    for item in fake_items_db:
-        if item["id"] == item_id:
-            return Item(**item)
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Item not found",
-    )
+    db_item = await crud.get_item_by_id(db, item_id)
+    if not db_item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found",
+        )
+    return db_item
 
 
 # ==========================================
@@ -341,9 +348,6 @@ async def read_item(
 @app.on_event("startup")
 async def startup_event():
     """アプリケーション起動時の処理"""
-    # モックDBの初期化
-    _initialize_fake_db()
-
     print("=" * 60)
     print("FastAPI Backend API が起動しました！")
     print("=" * 60)
@@ -351,11 +355,15 @@ async def startup_event():
     print(f"ReDoc: http://localhost:8000/redoc")
     print(f"Health Check: http://localhost:8000/health")
     print("-" * 60)
-    print("デフォルトユーザー:")
+    print("データベース初期化:")
+    print("  python init_db.py を実行してください")
+    print("")
+    print("デフォルトユーザー (init_db.py実行後):")
     print("  username: testuser")
     print("  password: password123")
     print("-" * 60)
     print(f"CORS Origins: {CORS_ORIGINS}")
+    print(f"Database URL: {DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')}")
     print("=" * 60)
 
 

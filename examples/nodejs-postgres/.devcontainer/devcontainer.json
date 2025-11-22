@@ -7,10 +7,14 @@
   "workspaceFolder": "/workspace",
 
   // ポート転送（ローカルからアクセス可能に）
-  "forwardPorts": [3000, 5433, 6379],
+  "forwardPorts": [3000, 5173, 5433, 6379],
   "portsAttributes": {
     "3000": {
-      "label": "Application Server",
+      "label": "Backend API (Express)",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Frontend (Vite + React)",
       "onAutoForward": "notify"
     },
     "5433": {
@@ -47,7 +51,9 @@
         "mtxr.sqltools",
         "mtxr.sqltools-driver-pg",
         "bradlc.vscode-tailwindcss",
-        "ms-vscode.vscode-typescript-next"
+        "ms-vscode.vscode-typescript-next",
+        "dsznajder.es7-react-js-snippets",
+        "formulahendry.auto-rename-tag"
       ],
 
       // エディタ設定
@@ -95,7 +101,7 @@
   "postStartCommand": "npm run db:migrate",
 
   // コンテナ接続後に実行
-  "postAttachCommand": "echo '✅ Dev Container is ready! Run: npm run dev'",
+  "postAttachCommand": "echo '✅ Dev Container is ready! Run: npm run dev (Backend + Frontend)'",
 
   // コンテナ内の実行ユーザー
   "remoteUser": "node",

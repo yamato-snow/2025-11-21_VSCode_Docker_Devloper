@@ -12,10 +12,17 @@
 **リポジトリ構成:**
 ```
 examples/
-├── nodejs-postgres/     # Next.js + PostgreSQL + Redis（フルスタック）
-├── python-flask/        # Flask + PostgreSQL（バックエンドAPI）
+├── nodejs-postgres/     # Node.js (Express) + PostgreSQL + Redis（フルスタックJavaScript）
+├── python-flask/        # Flask + PostgreSQL（バックエンドAPI、学習向け）
 └── python-fastapi/      # FastAPI + PostgreSQL + Redis（バックエンドAPI、2025年推奨）
 ```
+
+**3つのサンプルすべてに含まれる内容:**
+- 本物のPostgreSQLデータベース統合（モックではない）
+- データベースモデルを使った完全なCRUD操作
+- テストデータを含む初期化スクリプト
+- テスト手順を含む包括的なREADME
+- Dev Container設定
 
 ## 開発コマンド
 
@@ -59,17 +66,54 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 **サービス:** api (ポート5000), PostgreSQL (ポート5433)
 
 ```bash
+# データベース初期化（初回実行時必須）
+python init_db.py
+
 # 開発（devcontainerで自動起動）
-flask run --host=0.0.0.0
+python app.py
+# または
+flask run --host=0.0.0.0 --port=5000
 
 # 本番ビルドのテスト
 docker build --target production -t flask-app:latest .
 ```
 
 **主要な設定:**
-- 学習・プロトタイピング向けのシンプルな構成
+- PostgreSQL統合（Flask-SQLAlchemy）
+- リレーションシップを持つUserとItemモデル
+- RESTful APIエンドポイント（GET, POST, PUT, DELETE）
+- Flask-Bcryptによるパスワードハッシュ化
+- フロントエンド統合用にCORS有効化
+- ページネーション対応
 - Python 3.11-slimベースイメージ
 - Blackフォーマッター、Pylintが有効
+
+**データベース統合:**
+- Flask-SQLAlchemyを使った本物のPostgreSQLデータベース
+- データベースモデル: User, Itemテーブル（`app.py`内で定義）
+- 初期化スクリプト: `init_db.py`（テーブル作成とテストユーザー作成）
+- デフォルト認証情報: username=testuser, password=password123
+
+**APIエンドポイント:**
+```bash
+# ヘルスチェック
+curl http://localhost:5000/health
+
+# データベース接続テスト
+curl http://localhost:5000/api/db-test
+
+# Users API
+curl http://localhost:5000/api/users
+curl -X POST http://localhost:5000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user1","email":"user1@example.com","password":"pass123"}'
+
+# Items API
+curl http://localhost:5000/api/items
+curl -X POST http://localhost:5000/api/items \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Item 1","description":"Description","price":99.99,"owner_id":1}'
+```
 
 ### Python FastAPI サンプル（2025年推奨）
 
@@ -79,7 +123,10 @@ docker build --target production -t flask-app:latest .
 
 ```bash
 # 開発（devcontainerで自動起動）
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+fastapi dev main.py --host 0.0.0.0 --port 8000
+
+# 別の方法: uvicornコマンド（こちらも動作します）
+# uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 # APIドキュメント
 # Swagger UI: http://localhost:8000/docs
@@ -98,6 +145,36 @@ docker build --target production -t fastapi-app:latest .
 - Next.js連携用のCORS設定済み（ポート3000, 3001）
 - JWT認証のサンプル実装
 - リクエスト/レスポンス検証にPydantic V2を使用
+
+**データベース統合:**
+- SQLAlchemy 2.0 + asyncpgによる実PostgreSQLデータベース
+- データベースモデル: `models.py` (User、Itemテーブル)
+- CRUD操作: `crud.py` (非同期データベース操作)
+- データベース設定: `database.py` (接続プーリング、セッション管理)
+- 初期化スクリプト: `init_db.py` (テーブル作成とテストデータ投入)
+
+**データベース初期化:**
+```bash
+# コンテナ初回起動後に1回実行
+python init_db.py
+```
+
+これにより以下が作成されます：
+- `users` テーブル (id, email, username, hashed_password, is_active, タイムスタンプ)
+- `items` テーブル (id, title, description, price, owner_id, タイムスタンプ)
+- テストユーザー (username: testuser, password: password123)
+
+**ファイル構成:**
+```
+examples/python-fastapi/
+├── main.py           # FastAPIアプリケーション（エンドポイント）
+├── database.py       # SQLAlchemy非同期エンジンとセッション
+├── models.py         # データベーステーブル定義（ORM）
+├── crud.py           # データベースCRUD操作
+├── init_db.py        # データベース初期化スクリプト
+├── requirements.txt  # 本番用依存関係
+└── .devcontainer/    # Dev Container設定
+```
 
 ## アーキテクチャパターン
 
@@ -218,8 +295,8 @@ app.add_middleware(
 # 初回実行前にコピーして設定
 cp .env.example .env
 
-# 主要な変数
-DATABASE_URL=postgresql://user:pass@db:5433/dbname
+# 主要な変数（コンテナ内からのアクセス）
+DATABASE_URL=postgresql://user:pass@db:5432/dbname
 REDIS_URL=redis://redis:6379
 SECRET_KEY=change_in_production
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001
@@ -265,12 +342,20 @@ docker build --target production -t test:latest .
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 docker compose logs -f
 
-# 4. エンドポイントをテスト
+# 4. データベース初期化をテスト（FastAPIのみ）
+python init_db.py
+
+# 5. エンドポイントをテスト
 # Node.js: curl http://localhost:3000
-# Flask: curl http://localhost:5000/health
+# Flask: curl http://localhost:5001/health
 # FastAPI: curl http://localhost:8000/health
 
-# 5. クリーンアップ
+# 6. FastAPIユーザー作成をテスト
+curl -X POST "http://localhost:8000/users" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","username":"testuser2","password":"password123"}'
+
+# 7. クリーンアップ
 docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 ```
 
@@ -290,19 +375,37 @@ docker compose exec db psql -U postgres
 **VSCode SQLTools統合:**
 すべてのdevcontainer.jsonファイルには、VSCode内でGUIデータベースアクセスを可能にするSQLTools設定が含まれています。
 
+**FastAPIデータベース操作:**
+```bash
+# データベース初期化（テーブル作成 + テストデータ投入）
+python init_db.py
+
+# PostgreSQLでテーブル確認
+docker compose exec db psql -U postgres -d fastapi_db -c "\dt"
+
+# usersテーブル表示
+docker compose exec db psql -U postgres -d fastapi_db -c "SELECT * FROM users;"
+
+# itemsテーブル表示
+docker compose exec db psql -U postgres -d fastapi_db -c "SELECT * FROM items;"
+```
+
 **マイグレーションパターン:**
 - Node.js: `npm run db:migrate`でカスタムマイグレーション
-- Python: 通常はAlembicを使用（基本サンプルには含まれていません）
+- Python FastAPI: `init_db.py`による手動初期化（本番環境にはAlembicを追加可能）
+- Python Flask: 通常はAlembicを使用（基本サンプルには含まれていません）
 
 ## ポート規約
 
 サンプル全体で標準化：
 - **3000**: Node.js/Next.jsフロントエンド
-- **5000**: Flaskバックエンド
+- **5001**: Flaskバックエンド（ホスト側）、5000（コンテナ内）
 - **8000**: FastAPIバックエンド
-- **5433**: PostgreSQL
+- **5433**: PostgreSQL（ホスト側）、5432（コンテナ内）
 - **6379**: Redis
 - **9229**: Node.jsデバッガー
+
+**重要な注意:** devcontainer内からサービスにアクセスする際は、コンテナ内部のポートを使用します（例：PostgreSQLは `db:5432`）。ホストマシンからアクセスする際は、マッピングされたポートを使用します（例：`localhost:5433`）。
 
 ## よくある問題のトラブルシューティング
 

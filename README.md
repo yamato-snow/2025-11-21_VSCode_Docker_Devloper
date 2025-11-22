@@ -1,5 +1,14 @@
 # VSCode拡張機能で実現するDocker開発環境：開発から本番まで完全ガイド
 
+**このリポジトリには、本格的なデータベース統合を含む3つの実践サンプルが付属しています：**
+- 🟢 [Node.js + PostgreSQL + Redis](examples/nodejs-postgres/) - フルスタックJavaScript開発
+- 🔵 [FastAPI + PostgreSQL](examples/python-fastapi/) - モダンPythonバックエンド（2025年推奨）
+- 🟡 [Flask + PostgreSQL](examples/python-flask/) - シンプルなPythonバックエンド（学習向け）
+
+すべてのサンプルに詳細なREADME、テスト手順、データベース接続例が含まれています。
+
+---
+
 ## 目次
 1. [はじめに：なぜVSCode + Dockerなのか](#はじめになぜvscode--dockerなのか)
 2. [必要なツールのインストール](#必要なツールのインストール)
@@ -8,6 +17,7 @@
 5. [Docker拡張機能の具体的な使い方](#docker拡張機能の具体的な使い方)
 6. [Pythonフレームワーク選択：Flask vs FastAPI（2025年版）](#pythonフレームワーク選択flask-vs-fastapi2025年版)
 7. [実践：プロジェクトのコンテナ化](#実践プロジェクトのコンテナ化)
+   - 7.1. [サンプルプロジェクト一覧](#pythonflask--fastapiでの-dev-container例)
 8. [本番環境へのデプロイ](#本番環境へのデプロイ)
 9. [トラブルシューティング](#トラブルシューティング)
 
@@ -1091,6 +1101,13 @@ Flaskは依然として価値がありますが、新規プロジェクトでは
 
 ### 既存プロジェクトのコンテナ化（Node.js + PostgreSQL 例）
 
+**完全に動作するNode.js + PostgreSQL + Redisのサンプルは [examples/nodejs-postgres/](examples/nodejs-postgres/) で提供しています。**
+- 📖 詳細ドキュメント: [examples/nodejs-postgres/README.md](examples/nodejs-postgres/README.md)
+- Express + TypeScript、PostgreSQL、Redis統合
+- 詳細なテスト手順とトラブルシューティング
+
+以下は、その構成を解説したものです。
+
 #### プロジェクト構成
 
 ```
@@ -1208,7 +1225,7 @@ services:
       - "9229:9229"  # デバッグ用
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5433/myapp
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/myapp
       - REDIS_URL=redis://redis:6379
     depends_on:
       db:
@@ -1389,18 +1406,158 @@ npm test
 
 ### Python（Flask / FastAPI）での Dev Container例
 
-**Pythonバックエンドのサンプルコードは2種類提供しています：**
+**このリポジトリでは、3つの本格的なサンプルプロジェクトを提供しています：**
 
-1. **Flask**: シンプルで学習しやすいフレームワーク
-   - サンプルコード: [examples/python-flask/](examples/python-flask/)
+1. **Node.js + PostgreSQL + Redis**: フルスタックJavaScript開発
+   - サンプルコード: [examples/nodejs-postgres/](examples/nodejs-postgres/)
+   - 📖 詳細ドキュメント: [examples/nodejs-postgres/README.md](examples/nodejs-postgres/README.md)
+   - Express + TypeScript、PostgreSQL、Redis統合
+   - リアルタイムデータベース接続テスト
 
-2. **FastAPI**: モダンで高パフォーマンスなフレームワーク（2025年推奨）
+2. **FastAPI + PostgreSQL**: モダンPythonバックエンド（2025年推奨）
    - サンプルコード: [examples/python-fastapi/](examples/python-fastapi/)
+   - 📖 詳細ドキュメント: [examples/python-fastapi/README.md](examples/python-fastapi/README.md)
+   - **PostgreSQL統合済み** (SQLAlchemy 2.0 + asyncpg)
+   - JWT認証、Swagger UI、完全な型安全性
 
-**どちらを選ぶべきか？**
-- [Flask vs FastAPI 比較セクション](#pythonフレームワーク選択flask-vs-fastapi2025年版)を参照してください
+3. **Flask + PostgreSQL**: シンプルなPythonバックエンド（学習向け）
+   - サンプルコード: [examples/python-flask/](examples/python-flask/)
+   - 📖 詳細ドキュメント: [examples/python-flask/README.md](examples/python-flask/README.md)
+   - **PostgreSQL統合済み** (Flask-SQLAlchemy)
+   - シンプルなREST API、学習に最適
 
-以下、Flaskの例を示しますが、FastAPIも同様の手順です。
+**すべてのサンプルに共通する特徴：**
+- ✅ 本物のPostgreSQLデータベース統合（モックではない）
+- ✅ 詳細なテスト手順と期待される出力の記載
+- ✅ Dev Container対応（即座に開発開始可能）
+- ✅ Multi-stage Dockerfile（開発・本番環境対応）
+- ✅ 完全な動作サンプルとドキュメント
+
+**どれを選ぶべきか？**
+- Node.js経験者 → [nodejs-postgres](examples/nodejs-postgres/)
+- 本番環境のPython API → [python-fastapi](examples/python-fastapi/)
+- Pythonを初めて学ぶ → [python-flask](examples/python-flask/)
+- 詳細な比較 → [Flask vs FastAPI 比較セクション](#pythonフレームワーク選択flask-vs-fastapi2025年版)
+
+---
+
+#### FastAPIサンプルの特徴
+
+FastAPIサンプルは、実際のプロダクション環境を想定した **本格的なデータベース統合** を実装しています：
+
+**ファイル構成:**
+```
+examples/python-fastapi/
+├── main.py           # FastAPIアプリケーション（エンドポイント定義）
+├── database.py       # SQLAlchemy非同期エンジンとセッション管理
+├── models.py         # データベーステーブル定義（User、Item）
+├── crud.py           # データベースCRUD操作（非同期）
+├── init_db.py        # データベース初期化スクリプト
+├── requirements.txt  # 本番用依存関係
+└── .devcontainer/    # Dev Container設定
+    ├── devcontainer.json
+    └── docker-compose.yml
+```
+
+**データベーステーブル:**
+- **users**: id, email, username, hashed_password, is_active, created_at, updated_at
+- **items**: id, title, description, price, owner_id, created_at, updated_at
+
+**主要機能:**
+- ✅ PostgreSQL統合 (SQLAlchemy 2.0 + asyncpg)
+- ✅ JWT認証（トークンベース）
+- ✅ Pydantic V2による型安全なバリデーション
+- ✅ 自動生成されるAPI ドキュメント（Swagger UI / ReDoc）
+- ✅ CORS設定済み（Next.js連携対応）
+- ✅ Ruff linter（2025年推奨）
+
+**データベース初期化:**
+```bash
+# Dev Container起動後、初回のみ実行
+python init_db.py
+```
+
+これにより以下が作成されます：
+- データベーステーブル（users、items）
+- テストユーザー（username: testuser, password: password123）
+
+**API ドキュメント:**
+Dev Container起動後、ブラウザで以下にアクセス：
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+**動作確認:**
+```bash
+# ヘルスチェック
+curl http://localhost:8000/health
+
+# ユーザー登録
+curl -X POST "http://localhost:8000/users" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","username":"testuser2","password":"password123"}'
+
+# ログイン（トークン取得）
+curl -X POST "http://localhost:8000/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=testuser&password=password123"
+```
+
+---
+
+#### Flaskサンプルの特徴
+
+Flaskサンプルも、FastAPIと同様に **本格的なPostgreSQLデータベース統合** を実装しています。シンプルで学習しやすい構成になっています。
+
+**ファイル構成:**
+```
+examples/python-flask/
+├── app.py            # Flaskアプリケーション本体（モデル含む）
+├── init_db.py        # データベース初期化スクリプト
+├── requirements.txt  # 依存関係
+└── .devcontainer/    # Dev Container設定
+    ├── devcontainer.json
+    └── docker-compose.yml
+```
+
+**データベーステーブル:**
+- **users**: id, username, email, password_hash, is_active, created_at
+- **items**: id, title, description, price, owner_id, created_at
+
+**主要機能:**
+- ✅ PostgreSQL統合 (Flask-SQLAlchemy)
+- ✅ パスワードハッシュ化（Flask-Bcrypt）
+- ✅ CORS設定済み
+- ✅ RESTful API（GET, POST, PUT, DELETE）
+- ✅ ページネーション対応
+
+**データベース初期化:**
+```bash
+# Dev Container起動後、初回のみ実行
+python init_db.py
+```
+
+**動作確認:**
+```bash
+# ヘルスチェック
+curl http://localhost:5000/health
+
+# データベース接続テスト
+curl http://localhost:5000/api/db-test
+
+# ユーザー一覧
+curl http://localhost:5000/api/users
+
+# ユーザー登録
+curl -X POST "http://localhost:5000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"newuser","email":"new@example.com","password":"password123"}'
+```
+
+詳細は [Flask サンプルREADME](examples/python-flask/README.md) を参照してください。
+
+---
+
+以下、Flaskの例を示します。Flaskはシンプルで学習しやすいフレームワークです。
 
 #### Dockerfile
 

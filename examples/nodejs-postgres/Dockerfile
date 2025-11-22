@@ -41,6 +41,7 @@ COPY . .
 
 # 開発用ポート
 EXPOSE 3000
+EXPOSE 5173
 EXPOSE 9229
 
 # ホットリロード対応のコマンド
@@ -55,14 +56,15 @@ FROM base AS build
 
 WORKDIR /workspace
 
-# パッケージファイルのコピーと本番用依存関係のインストール
+# パッケージファイルのコピーと全依存関係のインストール
+# （devDependenciesもビルドに必要）
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # ソースコードのコピー
 COPY . .
 
-# TypeScriptのビルド
+# バックエンド（TypeScript）とフロントエンド（Vite）のビルド
 RUN npm run build
 
 # ==========================================
@@ -76,10 +78,13 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /workspace
 
-# ビルド成果物と依存関係のコピー
-COPY --from=build --chown=nodejs:nodejs /workspace/node_modules ./node_modules
+# 本番用依存関係のみコピー
+# まず package.json をコピーして、本番用のみインストール
+COPY package*.json ./
+RUN npm ci --only=production
+
+# ビルド成果物のコピー
 COPY --from=build --chown=nodejs:nodejs /workspace/dist ./dist
-COPY --from=build --chown=nodejs:nodejs /workspace/package*.json ./
 
 # 非rootユーザーで実行
 USER nodejs
@@ -90,4 +95,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 EXPOSE 3000
 
+# バックエンドサーバーを起動
+# 本番環境ではフロントエンドの静的ファイルはdist/clientから配信される
 CMD ["node", "dist/index.js"]

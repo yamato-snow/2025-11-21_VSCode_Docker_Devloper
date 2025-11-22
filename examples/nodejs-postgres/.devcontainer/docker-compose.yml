@@ -17,7 +17,8 @@ services:
       - node_modules:/workspace/node_modules
 
     ports:
-      - "3000:3000"    # アプリケーション
+      - "3000:3000"    # バックエンド（Express）
+      - "5173:5173"    # フロントエンド（Vite + React）
       - "9229:9229"    # デバッグ用
 
     environment:

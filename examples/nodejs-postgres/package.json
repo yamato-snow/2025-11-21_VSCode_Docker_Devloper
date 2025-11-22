@@ -1,13 +1,17 @@
 {
-  "name": "nodejs-postgres-example",
+  "name": "nodejs-postgres-react-example",
   "version": "1.0.0",
-  "description": "Node.js + PostgreSQL + Redis Dev Container Example",
+  "description": "Node.js + PostgreSQL + Redis + React Fullstack Dev Container Example",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
-    "build": "tsc",
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
+    "client:dev": "vite --config client/vite.config.ts",
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "tsc",
+    "build:client": "vite build client",
     "start": "node dist/index.js",
-    "db:setup": "echo 'Database setup placeholder'",
+    "db:setup": "psql -h db -U postgres -d myapp -f init-db.sql",
     "db:migrate": "echo 'Database migration placeholder'"
   },
   "keywords": [
@@ -15,6 +19,9 @@
     "express",
     "postgresql",
     "redis",
+    "react",
+    "vite",
+    "fullstack",
     "docker",
     "devcontainer"
   ],
@@ -24,14 +31,26 @@
     "express": "^4.18.2",
     "pg": "^8.11.3",
     "redis": "^4.6.12",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.6",
     "@types/pg": "^8.10.9",
+    "@types/cors": "^2.8.17",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "vite": "^6.0.0",
+    "typescript": "^5.3.3",
     "nodemon": "^3.0.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "concurrently": "^9.0.0",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
   }
 }

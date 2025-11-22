@@ -12,10 +12,17 @@ This is an educational repository demonstrating VSCode + Docker development work
 **Repository Structure:**
 ```
 examples/
-├── nodejs-postgres/     # Next.js + PostgreSQL + Redis (fullstack)
-├── python-flask/        # Flask + PostgreSQL (backend API)
+├── nodejs-postgres/     # Node.js (Express) + PostgreSQL + Redis (fullstack JavaScript)
+├── python-flask/        # Flask + PostgreSQL (backend API, learning-friendly)
 └── python-fastapi/      # FastAPI + PostgreSQL + Redis (backend API, 2025 recommended)
 ```
+
+**All three examples include:**
+- Real PostgreSQL database integration (not mocks)
+- Complete CRUD operations with database models
+- Initialization scripts with test data
+- Comprehensive README with testing procedures
+- Dev Container configurations
 
 ## Development Commands
 
@@ -59,17 +66,54 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 **Services:** api (port 5000), PostgreSQL (port 5433)
 
 ```bash
+# Database initialization (required on first run)
+python init_db.py
+
 # Development (auto-starts via devcontainer)
-flask run --host=0.0.0.0
+python app.py
+# or
+flask run --host=0.0.0.0 --port=5000
 
 # Production build test
 docker build --target production -t flask-app:latest .
 ```
 
 **Key Configuration:**
-- Simpler setup for learning/prototyping
+- PostgreSQL integration (Flask-SQLAlchemy)
+- User and Item models with relationships
+- RESTful API endpoints (GET, POST, PUT, DELETE)
+- Password hashing with Flask-Bcrypt
+- CORS enabled for frontend integration
+- Pagination support
 - Python 3.11-slim base image
 - Black formatter, Pylint enabled
+
+**Database Integration:**
+- Real PostgreSQL database with Flask-SQLAlchemy
+- Database models: User, Item tables (defined in `app.py`)
+- Initialization script: `init_db.py` (creates tables and test user)
+- Default credentials: username=testuser, password=password123
+
+**API Endpoints:**
+```bash
+# Health check
+curl http://localhost:5000/health
+
+# Database connection test
+curl http://localhost:5000/api/db-test
+
+# Users API
+curl http://localhost:5000/api/users
+curl -X POST http://localhost:5000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user1","email":"user1@example.com","password":"pass123"}'
+
+# Items API
+curl http://localhost:5000/api/items
+curl -X POST http://localhost:5000/api/items \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Item 1","description":"Description","price":99.99,"owner_id":1}'
+```
 
 ### Python FastAPI Example (Recommended 2025)
 
@@ -79,7 +123,10 @@ docker build --target production -t flask-app:latest .
 
 ```bash
 # Development (auto-starts via devcontainer)
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+fastapi dev main.py --host 0.0.0.0 --port 8000
+
+# Alternative: uvicorn command (also works)
+# uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 # API Documentation
 # Swagger UI: http://localhost:8000/docs
@@ -98,6 +145,36 @@ docker build --target production -t fastapi-app:latest .
 - CORS preconfigured for Next.js integration (ports 3000, 3001)
 - JWT authentication sample implementation
 - Pydantic V2 for request/response validation
+
+**Database Integration:**
+- Real PostgreSQL database with SQLAlchemy 2.0 + asyncpg
+- Database models: `models.py` (User, Item tables)
+- CRUD operations: `crud.py` (async database operations)
+- Database setup: `database.py` (connection pooling, session management)
+- Initialization script: `init_db.py` (creates tables and test data)
+
+**Database Initialization:**
+```bash
+# Run once after first container startup
+python init_db.py
+```
+
+This creates:
+- `users` table (id, email, username, hashed_password, is_active, timestamps)
+- `items` table (id, title, description, price, owner_id, timestamps)
+- Test user (username: testuser, password: password123)
+
+**File Structure:**
+```
+examples/python-fastapi/
+├── main.py           # FastAPI application with endpoints
+├── database.py       # SQLAlchemy async engine and session
+├── models.py         # Database table definitions (ORM)
+├── crud.py           # Database CRUD operations
+├── init_db.py        # Database initialization script
+├── requirements.txt  # Production dependencies
+└── .devcontainer/    # Dev Container configuration
+```
 
 ## Architecture Patterns
 
@@ -218,8 +295,8 @@ Each example uses `.env.example` files. Pattern:
 # Copy and configure before first run
 cp .env.example .env
 
-# Key variables
-DATABASE_URL=postgresql://user:pass@db:5433/dbname
+# Key variables (from within containers)
+DATABASE_URL=postgresql://user:pass@db:5432/dbname
 REDIS_URL=redis://redis:6379
 SECRET_KEY=change_in_production
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001
@@ -265,12 +342,20 @@ docker build --target production -t test:latest .
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 docker compose logs -f
 
-# 4. Test endpoints
+# 4. Test database initialization (FastAPI only)
+python init_db.py
+
+# 5. Test endpoints
 # Node.js: curl http://localhost:3000
-# Flask: curl http://localhost:5000/health
+# Flask: curl http://localhost:5001/health
 # FastAPI: curl http://localhost:8000/health
 
-# 5. Clean up
+# 6. Test FastAPI user creation
+curl -X POST "http://localhost:8000/users" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","username":"testuser2","password":"password123"}'
+
+# 7. Clean up
 docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 ```
 
@@ -290,19 +375,37 @@ docker compose exec db psql -U postgres
 **VSCode SQLTools integration:**
 All devcontainer.json files include SQLTools configuration for GUI database access within VSCode.
 
+**FastAPI Database Operations:**
+```bash
+# Initialize database (create tables + test data)
+python init_db.py
+
+# Check tables in PostgreSQL
+docker compose exec db psql -U postgres -d fastapi_db -c "\dt"
+
+# View users table
+docker compose exec db psql -U postgres -d fastapi_db -c "SELECT * FROM users;"
+
+# View items table
+docker compose exec db psql -U postgres -d fastapi_db -c "SELECT * FROM items;"
+```
+
 **Migration pattern:**
 - Node.js: Custom migrations in `npm run db:migrate`
-- Python: Typically uses Alembic (not included in basic examples)
+- Python FastAPI: Manual initialization with `init_db.py` (Alembic can be added for production)
+- Python Flask: Typically uses Alembic (not included in basic examples)
 
 ## Port Conventions
 
 Standardized across examples:
 - **3000**: Node.js/Next.js frontend
-- **5000**: Flask backend
+- **5001**: Flask backend (host), 5000 (container)
 - **8000**: FastAPI backend
-- **5433**: PostgreSQL
+- **5433**: PostgreSQL (host), 5432 (container)
 - **6379**: Redis
 - **9229**: Node.js debugger
+
+**Important Note:** When accessing services from within dev containers, use the container-internal ports (e.g., `db:5432` for PostgreSQL). When accessing from the host machine, use the mapped ports (e.g., `localhost:5433`).
 
 ## Troubleshooting Common Issues
 
