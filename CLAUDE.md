@@ -14,7 +14,7 @@ This is an educational repository demonstrating VSCode + Docker development work
 examples/
 ├── nodejs-postgres/     # Node.js (Express + React) + PostgreSQL + Redis (fullstack)
 ├── python-flask/        # Flask + PostgreSQL (backend API, learning-friendly)
-└── python-fastapi/      # FastAPI + PostgreSQL + Redis (backend API, 2025 recommended)
+└── python-fastapi/      # FastAPI + React + PostgreSQL + Redis (fullstack, JWT auth, 2025 recommended)
 ```
 
 **All three examples include:**
@@ -98,34 +98,54 @@ curl -X POST http://localhost:3000/api/items \
 # Open browser: http://localhost:5173
 ```
 
-### Python Flask Example
+### Python Flask + React Example (Learning-Friendly)
 
 **Location:** `examples/python-flask/`
 
-**Services:** api (port 5000), PostgreSQL (port 5433)
+**Services:** app (port 5001, 5173), PostgreSQL (port 5433)
+
+**Complete fullstack setup with:**
+- **Frontend**: React 19 + Vite 6 + Tailwind CSS + JWT authentication UI
+- **Backend**: Flask + PostgreSQL
+- **Authentication**: JWT with login/signup UI fully integrated
+- **Learning-optimized**: Simple, easy-to-understand code patterns
 
 ```bash
 # Database initialization (required on first run)
 python init_db.py
 
-# Development (auto-starts via devcontainer)
+# Backend development (auto-starts via devcontainer)
 python app.py
 # or
-flask run --host=0.0.0.0 --port=5000
+flask run --host=0.0.0.0 --port=5000 --debug
+
+# Frontend development (separate terminal)
+npm run dev
+
+# React UI with JWT authentication
+# Frontend: http://localhost:5173
+
+# Default test credentials
+# username: testuser
+# password: password123
 
 # Production build test
 docker build --target production -t flask-app:latest .
 ```
 
 **Key Configuration:**
+- **Frontend**: React 19 + Vite 6 + TypeScript + Tailwind CSS
+- **JWT Authentication UI**: Login/signup forms, auth guards, token management
 - PostgreSQL integration (Flask-SQLAlchemy)
 - User and Item models with relationships
 - RESTful API endpoints (GET, POST, PUT, DELETE)
 - Password hashing with Flask-Bcrypt
-- CORS enabled for frontend integration
+- CORS preconfigured for React Vite (port 5173)
+- JWT authentication fully integrated (backend + frontend)
 - Pagination support
 - Python 3.11-slim base image
 - Black formatter, Pylint enabled
+- Node.js 20.x installed in dev container for npm/React support
 
 **Database Integration:**
 - Real PostgreSQL database with Flask-SQLAlchemy
@@ -133,43 +153,71 @@ docker build --target production -t flask-app:latest .
 - Initialization script: `init_db.py` (creates tables and test user)
 - Default credentials: username=testuser, password=password123
 
+**JWT Authentication Endpoints:**
+```bash
+# Register new user
+curl -X POST "http://localhost:5001/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"newuser","email":"new@example.com","password":"pass123"}'
+
+# Login (get token)
+curl -X POST "http://localhost:5001/auth/token" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"password123"}'
+
+# Get current user (requires Bearer token)
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:5001/auth/me
+```
+
 **API Endpoints:**
 ```bash
 # Health check
-curl http://localhost:5000/health
+curl http://localhost:5001/health
 
 # Database connection test
-curl http://localhost:5000/api/db-test
+curl http://localhost:5001/api/db-test
 
 # Users API
-curl http://localhost:5000/api/users
-curl -X POST http://localhost:5000/api/users \
+curl http://localhost:5001/api/users
+curl -X POST http://localhost:5001/api/users \
   -H "Content-Type: application/json" \
   -d '{"username":"user1","email":"user1@example.com","password":"pass123"}'
 
 # Items API
-curl http://localhost:5000/api/items
-curl -X POST http://localhost:5000/api/items \
+curl http://localhost:5001/api/items
+curl -X POST http://localhost:5001/api/items \
   -H "Content-Type: application/json" \
   -d '{"title":"Item 1","description":"Description","price":99.99,"owner_id":1}'
 ```
 
-### Python FastAPI Example (Recommended 2025)
+### Python FastAPI + React Example (Recommended 2025)
 
 **Location:** `examples/python-fastapi/`
 
-**Services:** api (port 8000), PostgreSQL (port 5433), Redis (port 6379)
+**Services:** api (port 8000, 5173), PostgreSQL (port 5433), Redis (port 6379)
+
+**Complete fullstack setup with:**
+- **Frontend**: React 19 + Vite 6 + Tailwind CSS + JWT authentication UI
+- **Backend**: FastAPI + PostgreSQL + Redis
+- **Authentication**: JWT with login/signup UI fully integrated
 
 ```bash
-# Development (auto-starts via devcontainer)
+# Database initialization (required on first run)
+python init_db.py
+
+# Backend development (auto-starts via devcontainer)
 fastapi dev main.py --host 0.0.0.0 --port 8000
 
-# Alternative: uvicorn command (also works)
-# uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# Frontend development (separate terminal)
+npm run dev
 
 # API Documentation
 # Swagger UI: http://localhost:8000/docs
 # ReDoc: http://localhost:8000/redoc
+
+# React UI with JWT authentication
+# Frontend: http://localhost:5173
 
 # Default test credentials
 # username: testuser
@@ -180,10 +228,13 @@ docker build --target production -t fastapi-app:latest .
 ```
 
 **Key Configuration:**
+- **Frontend**: React 19 + Vite 6 + TypeScript + Tailwind CSS
+- **JWT Authentication UI**: Login/signup forms, auth guards, token management
 - Uses Ruff (2025 recommended linter) instead of Pylint
-- CORS preconfigured for Next.js integration (ports 3000, 3001)
-- JWT authentication sample implementation
+- CORS preconfigured for React Vite (port 5173) + Next.js (ports 3000, 3001)
+- JWT authentication fully integrated (backend + frontend)
 - Pydantic V2 for request/response validation
+- Node.js 20.x installed in dev container for npm/React support
 
 **Database Integration:**
 - Real PostgreSQL database with SQLAlchemy 2.0 + asyncpg
@@ -206,12 +257,20 @@ This creates:
 **File Structure:**
 ```
 examples/python-fastapi/
+├── client/           # React frontend
+│   ├── src/
+│   │   ├── components/  # React components (Login, UserList, ItemList)
+│   │   ├── App.tsx      # Main app with auth state
+│   │   └── api.ts       # API client with JWT token management
+│   ├── vite.config.ts   # Vite configuration
+│   └── index.html       # HTML template
 ├── main.py           # FastAPI application with endpoints
 ├── database.py       # SQLAlchemy async engine and session
 ├── models.py         # Database table definitions (ORM)
 ├── crud.py           # Database CRUD operations
 ├── init_db.py        # Database initialization script
-├── requirements.txt  # Production dependencies
+├── package.json      # npm dependencies (React, Vite, Tailwind)
+├── requirements.txt  # Python production dependencies
 └── .devcontainer/    # Dev Container configuration
 ```
 
@@ -386,12 +445,16 @@ docker compose logs -f
 # FastAPI: python init_db.py
 # Flask: python init_db.py
 
-# 5. Test endpoints
+# 5. Test frontend (React projects)
+# Node.js: Open http://localhost:5173
+# FastAPI: npm run dev → http://localhost:5173
+
+# 6. Test endpoints
 # Node.js: curl http://localhost:3000/health
 # Flask: curl http://localhost:5000/health
 # FastAPI: curl http://localhost:8000/health
 
-# 6. Test user creation
+# 7. Test user creation
 # Node.js:
 curl -X POST "http://localhost:3000/api/users" \
   -H "Content-Type: application/json" \
@@ -402,7 +465,7 @@ curl -X POST "http://localhost:8000/users" \
   -H "Content-Type: application/json" \
   -d '{"email":"test@test.com","username":"testuser2","password":"password123"}'
 
-# 7. Clean up
+# 8. Clean up
 docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 ```
 
@@ -463,7 +526,8 @@ docker compose exec db psql -U postgres -d fastapi_db -c "SELECT * FROM items;"
 ## Port Conventions
 
 Standardized across examples:
-- **3000**: Node.js/Next.js frontend
+- **3000**: Node.js/Express backend
+- **5173**: React + Vite frontend (Node.js and FastAPI projects)
 - **5001**: Flask backend (host), 5000 (container)
 - **8000**: FastAPI backend
 - **5433**: PostgreSQL (host), 5432 (container)

@@ -7,10 +7,14 @@
   "workspaceFolder": "/workspace",
 
   // ポート転送
-  "forwardPorts": [5001, 5433],
+  "forwardPorts": [5001, 5173, 5433],
   "portsAttributes": {
     "5001": {
-      "label": "Flask Application",
+      "label": "Flask API",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Vite Frontend",
       "onAutoForward": "notify"
     },
     "5433": {
@@ -33,13 +37,27 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        // Python開発
         "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-python.black-formatter",
         "ms-python.flake8",
-        "ms-azuretools.vscode-docker",
+
+        // React/TypeScript 開発
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "dsznajder.es7-react-js-snippets",
+
+        // データベース
         "mtxr.sqltools",
-        "mtxr.sqltools-driver-pg"
+        "mtxr.sqltools-driver-pg",
+
+        // Docker
+        "ms-azuretools.vscode-docker",
+
+        // REST Client（API テスト用）
+        "humao.rest-client"
       ],
 
       "settings": {
@@ -72,14 +90,35 @@
             "username": "postgres",
             "password": "postgres"
           }
-        ]
+        ],
+
+        // TypeScript/React 設定
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "tailwindCSS.experimental.classRegex": [
+          ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+          ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+        ],
+
+        // ファイル設定
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/.pytest_cache": true,
+          "**/node_modules": true
+        }
       }
     }
   },
 
   // ライフサイクルコマンド
-  "postCreateCommand": "pip install -r requirements.txt -r requirements-dev.txt",
-  "postStartCommand": "flask db upgrade",
+  "postCreateCommand": "pip install -r requirements.txt -r requirements-dev.txt && npm install && python init_db.py",
+  "postStartCommand": "echo '✅ Flask + React Dev Container is ready!\n🐍 Flask API: http://localhost:5001\n⚛️  React App: http://localhost:5173'",
 
   // コンテナ内の実行ユーザー
   "remoteUser": "root",

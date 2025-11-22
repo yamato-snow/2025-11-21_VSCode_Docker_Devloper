@@ -49,3 +49,8 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
+
+# Node.js / React
+node_modules/
+dist/
+package-lock.json

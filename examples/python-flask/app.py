@@ -9,6 +9,8 @@ PostgreSQL + SQLAlchemyを使用したシンプルなバックエンドAPI
 
 from datetime import datetime, timedelta
 import os
+from functools import wraps
+import jwt
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -29,10 +31,80 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_secret_key_change_in_production')
 
+# JWT設定
+JWT_SECRET_KEY = app.config['SECRET_KEY']
+JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES', '60')))
+
 # 拡張機能初期化
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 CORS(app)
+
+# ==========================================
+# JWT ユーティリティ関数
+# ==========================================
+
+def create_access_token(username: str) -> str:
+    """JWTアクセストークン作成"""
+    payload = {
+        'sub': username,
+        'exp': datetime.utcnow() + JWT_ACCESS_TOKEN_EXPIRES,
+        'iat': datetime.utcnow()
+    }
+    return jwt.encode(payload, JWT_SECRET_KEY, algorithm='HS256')
+
+
+def verify_token(token: str) -> dict:
+    """トークン検証"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=['HS256'])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise ValueError('Token has expired')
+    except jwt.InvalidTokenError:
+        raise ValueError('Invalid token')
+
+
+def token_required(f):
+    """JWT認証デコレータ"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        auth_header = request.headers.get('Authorization')
+
+        if auth_header:
+            try:
+                token = auth_header.split(' ')[1]  # Bearer TOKEN
+            except IndexError:
+                return jsonify({'error': 'Invalid authorization header format'}), 401
+
+        if not token:
+            return jsonify({'error': 'Access token required'}), 401
+
+        try:
+            payload = verify_token(token)
+            username = payload.get('sub')
+
+            # ユーザー情報を取得
+            current_user = User.query.filter_by(username=username).first()
+            if not current_user:
+                return jsonify({'error': 'User not found'}), 401
+
+            if not current_user.is_active:
+                return jsonify({'error': 'Inactive user'}), 401
+
+            # リクエストコンテキストにユーザー情報を追加
+            request.current_user = current_user
+
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 401
+        except Exception as e:
+            return jsonify({'error': 'Invalid or expired token'}), 401
+
+        return f(*args, **kwargs)
+
+    return decorated
+
 
 # ==========================================
 # データベースモデル
@@ -94,14 +166,21 @@ class Item(db.Model):
 def index():
     """ルートエンドポイント"""
     return jsonify({
-        'message': 'Welcome to Flask Backend API',
+        'message': 'Welcome to Flask Backend API with JWT Authentication',
         'framework': 'Flask',
         'environment': os.getenv('FLASK_ENV', 'production'),
         'endpoints': {
             'health': '/health',
-            'users': '/api/users',
-            'items': '/api/items',
-            'database_test': '/api/db-test'
+            'auth': {
+                'register': 'POST /auth/register',
+                'login': 'POST /auth/token',
+                'me': 'GET /auth/me (protected)'
+            },
+            'api': {
+                'users': '/api/users (protected)',
+                'items': '/api/items (protected)',
+                'database_test': '/api/db-test'
+            }
         }
     })
 
@@ -114,6 +193,105 @@ def health():
         'timestamp': datetime.utcnow().isoformat()
     })
 
+
+# ==========================================
+# 認証エンドポイント
+# ==========================================
+
+@app.route('/auth/register', methods=['POST'])
+def register():
+    """ユーザー登録＋トークン発行"""
+    try:
+        data = request.get_json()
+
+        # バリデーション
+        if not data or not data.get('username') or not data.get('email') or not data.get('password'):
+            return jsonify({'error': 'Username, email, and password are required'}), 400
+
+        # パスワード長チェック
+        if len(data['password']) < 8:
+            return jsonify({'error': 'Password must be at least 8 characters long'}), 400
+
+        # 重複チェック
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({'error': 'Username already exists'}), 400
+
+        if User.query.filter_by(email=data['email']).first():
+            return jsonify({'error': 'Email already exists'}), 400
+
+        # パスワードハッシュ化
+        password_hash = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+
+        # ユーザー作成
+        new_user = User(
+            username=data['username'],
+            email=data['email'],
+            password_hash=password_hash
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        # トークン生成
+        access_token = create_access_token(new_user.username)
+
+        return jsonify({
+            'access_token': access_token,
+            'token_type': 'bearer',
+            'user': new_user.to_dict()
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/auth/token', methods=['POST'])
+def login():
+    """ログイン（トークン発行）"""
+    try:
+        data = request.get_json()
+
+        # バリデーション
+        if not data or not data.get('username') or not data.get('password'):
+            return jsonify({'error': 'Username and password are required'}), 400
+
+        # ユーザー検証
+        user = User.query.filter_by(username=data['username']).first()
+        if not user:
+            return jsonify({'error': 'Incorrect username or password'}), 401
+
+        # パスワード検証
+        if not bcrypt.check_password_hash(user.password_hash, data['password']):
+            return jsonify({'error': 'Incorrect username or password'}), 401
+
+        # アクティブユーザーチェック
+        if not user.is_active:
+            return jsonify({'error': 'User account is inactive'}), 401
+
+        # トークン生成
+        access_token = create_access_token(user.username)
+
+        return jsonify({
+            'access_token': access_token,
+            'token_type': 'bearer',
+            'user': user.to_dict()
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/auth/me', methods=['GET'])
+@token_required
+def get_current_user():
+    """現在のユーザー情報取得（保護されたルート）"""
+    return jsonify(request.current_user.to_dict()), 200
+
+
+# ==========================================
+# API エンドポイント
+# ==========================================
 
 @app.route('/api/db-test')
 def db_test():
@@ -140,8 +318,9 @@ def db_test():
 
 
 @app.route('/api/users', methods=['GET', 'POST'])
+@token_required
 def users():
-    """ユーザーエンドポイント"""
+    """ユーザーエンドポイント（認証必須）"""
     if request.method == 'GET':
         # ユーザー一覧取得
         page = request.args.get('page', 1, type=int)
@@ -191,15 +370,17 @@ def users():
 
 
 @app.route('/api/users/<int:user_id>', methods=['GET'])
+@token_required
 def get_user(user_id):
-    """ユーザー詳細取得"""
+    """ユーザー詳細取得（認証必須）"""
     user = User.query.get_or_404(user_id)
     return jsonify(user.to_dict())
 
 
 @app.route('/api/items', methods=['GET', 'POST'])
+@token_required
 def items():
-    """アイテムエンドポイント"""
+    """アイテムエンドポイント（認証必須）"""
     if request.method == 'GET':
         # アイテム一覧取得
         page = request.args.get('page', 1, type=int)
@@ -245,8 +426,9 @@ def items():
 
 
 @app.route('/api/items/<int:item_id>', methods=['GET', 'PUT', 'DELETE'])
+@token_required
 def item_detail(item_id):
-    """アイテム詳細エンドポイント"""
+    """アイテム詳細エンドポイント（認証必須）"""
     item = Item.query.get_or_404(item_id)
 
     if request.method == 'GET':
@@ -282,8 +464,9 @@ def item_detail(item_id):
 
 
 @app.route('/api/users/<int:user_id>/items', methods=['GET'])
+@token_required
 def user_items(user_id):
-    """ユーザーのアイテム一覧取得"""
+    """ユーザーのアイテム一覧取得（認証必須）"""
     user = User.query.get_or_404(user_id)
 
     return jsonify({

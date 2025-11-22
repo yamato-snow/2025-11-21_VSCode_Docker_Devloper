@@ -7,27 +7,35 @@
 ```
 examples/
 ├── nodejs-postgres/      # Node.js (Express + React) + DB（フルスタック開発用）
-│   ├── .devcontainer/    # フロントエンド: React + Vite
+│   ├── .devcontainer/    # フロントエンド: React 19 + Vite 6
 │   │   ├── devcontainer.json  # バックエンド: Express + PostgreSQL + Redis
 │   │   └── docker-compose.yml
+│   ├── client/           # Reactフロントエンド
 │   ├── Dockerfile
+│   ├── package.json
 │   ├── docker-compose.yml
 │   ├── docker-compose.prod.yml
 │   └── .env.example
 │
-├── python-flask/         # Python Flask API（バックエンド開発用）
-│   ├── .devcontainer/    # データベース: PostgreSQL
-│   │   ├── devcontainer.json
+├── python-flask/         # Python Flask + React（フルスタック開発用 - 学習向け）
+│   ├── .devcontainer/    # フロントエンド: React 19 + Vite 6 + JWT認証UI
+│   │   ├── devcontainer.json  # バックエンド: Flask + PostgreSQL
 │   │   └── docker-compose.yml
+│   ├── client/           # Reactフロントエンド（JWT認証付き）
 │   ├── Dockerfile
+│   ├── package.json
+│   ├── app.py
 │   ├── requirements.txt
-│   └── requirements-dev.txt
+│   ├── requirements-dev.txt
+│   └── .env.example
 │
-└── python-fastapi/       # Python FastAPI API（バックエンド開発用 - 2025年推奨）
-    ├── .devcontainer/    # データベース: PostgreSQL, Redis
-    │   ├── devcontainer.json
+└── python-fastapi/       # Python FastAPI + React（フルスタック開発用 - 2025年推奨）
+    ├── .devcontainer/    # フロントエンド: React 19 + Vite 6 + JWT認証UI
+    │   ├── devcontainer.json  # バックエンド: FastAPI + PostgreSQL + Redis
     │   └── docker-compose.yml
+    ├── client/           # Reactフロントエンド（JWT認証付き）
     ├── Dockerfile
+    ├── package.json
     ├── main.py
     ├── requirements.txt
     ├── requirements-dev.txt
@@ -77,12 +85,15 @@ cp -r examples/nodejs-postgres/* /path/to/your/project/
 
 ---
 
-### Python Flask バックエンドAPIプロジェクト
+### Python Flask + React フルスタックプロジェクト（学習向け）
 
 **このサンプルは:**
-- Python FlaskでのバックエンドAPI開発用
-- シンプルで学習しやすいフレームワーク
-- PostgreSQL（データベース）を含む
+- **Flask + React 19 フルスタック開発用**（**学習に最適**）
+- シンプルで理解しやすいフレームワーク
+- **フロントエンド**: React 19 + Vite 6 + Tailwind CSS + JWT認証UI
+- **バックエンド**: Flask + PostgreSQL
+- JWT認証が完全統合（ログイン/新規登録UI付き）
+- 段階的に学習できる構成
 
 #### 1. プロジェクトのコピー
 
@@ -90,52 +101,107 @@ cp -r examples/nodejs-postgres/* /path/to/your/project/
 cp -r examples/python-flask/* /path/to/your/project/
 ```
 
-#### 2. 必要なファイルの準備
+#### 2. サンプルコードの特徴
 
-プロジェクトルートに以下のファイルが必要です：
-- `app.py`: Flaskアプリケーションのエントリーポイント
+このプロジェクトは**完全統合されたフルスタック環境**です：
 
-**最小限の `app.py` サンプル:**
+**フロントエンド（React）:**
+- **React 19 + Vite 6 + TypeScript** による最新スタック
+- **Tailwind CSS** でスタイリング
+- **JWT認証UI** - ログイン/新規登録フォーム完備
+- **認証ガード** - トークンベースのルーティング保護
+- ユーザー情報表示、アイテム管理UI
 
-```python
-from flask import Flask
+**バックエンド（Flask）:**
+- **シンプルな構成** - 学習に最適な最小限の実装
+- **JWT認証の完全実装**
+  - デフォルトユーザー: `testuser` / `password123`
+  - `/auth/register` エンドポイントで新規登録
+  - `/auth/token` エンドポイントでログイン
+  - `/auth/me` で認証情報取得
+  - Bearer トークン認証
 
-app = Flask(__name__)
+- **CORS設定済み**（React Vite フロントエンド連携対応）
+  - `localhost:5173`（Vite）からのアクセス許可済み
 
-@app.route('/')
-def hello():
-    return 'Hello, Dev Container!'
-
-@app.route('/health')
-def health():
-    return {'status': 'ok'}
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
-```
+- **Flask-SQLAlchemy によるORM**
+  - シンプルで理解しやすいコードパターン
 
 #### 3. Dev Containerで起動
 
 1. VSCodeでプロジェクトフォルダを開く
 2. `F1` → 「**Dev Containers: Reopen in Container**」
-3. 初回ビルドを待つ
-4. 自動的にFlask開発サーバーが起動
+3. 初回ビルドを待つ（5〜10分）
+4. **データベース初期化（初回のみ必須）**:
+   ```bash
+   python init_db.py
+   ```
+5. バックエンドは自動起動、フロントエンドは別ターミナルで起動:
+   ```bash
+   npm run dev
+   ```
 
 #### 4. 動作確認
 
-- アプリケーション: http://localhost:5001
-- PostgreSQL: `localhost:5433`
+**フロントエンド（React UI）:**
+- **React アプリケーション**: http://localhost:5173
+  - ログイン/新規登録UI
+  - ユーザー情報タブ
+  - アイテム管理タブ
+  - デフォルトユーザー: `testuser` / `password123`
+
+**バックエンド（Flask）:**
+- **APIサーバー**: http://localhost:5001
+- **ヘルスチェック**: http://localhost:5001/health
+- **データベーステスト**: http://localhost:5001/api/db-test
+
+**データベース:**
+- **PostgreSQL**: `localhost:5433`
+
+#### 5. React UIでのログイン手順
+
+1. ブラウザで http://localhost:5173 を開く
+2. 「ログイン」タブを選択（デフォルト）
+3. デフォルトユーザーでログイン:
+   - **username**: `testuser`
+   - **password**: `password123`
+4. ログイン成功後、以下の機能が利用可能:
+   - **ユーザー情報タブ**: 現在のユーザー情報を表示
+   - **アイテム管理タブ**: アイテムの作成・一覧表示
+   - **ログアウト**: 右上のボタンでログアウト
+
+#### 6. フロントエンド・バックエンド統合の仕組み
+
+**アーキテクチャ:**
+```
+React (localhost:5173)
+  ↓ Vite プロキシ (/api, /auth → localhost:5001)
+  ↓ JWT トークン (localStorage)
+  ↓
+Flask (localhost:5001)
+  ↓ Bearer トークン認証
+  ↓
+PostgreSQL (localhost:5433)
+```
+
+**認証フロー:**
+1. ユーザーがReact UIでログイン
+2. Flask `/auth/token` エンドポイントにPOST
+3. JWTトークンを取得し localStorage に保存
+4. 以降のAPI呼び出しで自動的に `Authorization: Bearer <token>` ヘッダーを付与
+5. トークンが無効（401）の場合、自動的にログイン画面にリダイレクト
 
 ---
 
-### Python FastAPI バックエンドAPIプロジェクト（2025年推奨）
+### Python FastAPI + React フルスタックプロジェクト（2025年推奨）
 
 **このサンプルは:**
-- Python FastAPIでのバックエンドAPI開発用（**2025年推奨**）
+- **FastAPI + React 19 フルスタック開発用**（**2025年推奨**）
 - モダンで高パフォーマンスなフレームワーク
-- PostgreSQL（データベース）とRedis（キャッシュ）を含む
+- **フロントエンド**: React 19 + Vite 6 + Tailwind CSS + JWT認証UI
+- **バックエンド**: FastAPI + PostgreSQL + Redis
 - 自動APIドキュメント生成（Swagger UI）
-- Next.jsフロントエンドとの連携を想定
+- JWT認証が完全統合（ログイン/新規登録UI付き）
 
 #### 1. プロジェクトのコピー
 
@@ -145,19 +211,28 @@ cp -r examples/python-fastapi/* /path/to/your/project/
 
 #### 2. サンプルコードの特徴
 
-`main.py` には、すぐに使えるAPIサンプルが含まれています：
+このプロジェクトは**完全統合されたフルスタック環境**です：
 
+**フロントエンド（React）:**
+- **React 19 + Vite 6 + TypeScript** による最新スタック
+- **Tailwind CSS** でスタイリング
+- **JWT認証UI** - ログイン/新規登録フォーム完備
+- **認証ガード** - トークンベースのルーティング保護
+- ユーザー情報表示、アイテム管理UI
+
+**バックエンド（FastAPI）:**
 - **自動APIドキュメント生成**
   - Swagger UI: http://localhost:8000/docs
   - ReDoc: http://localhost:8000/redoc
 
-- **JWT認証のサンプル実装**
+- **JWT認証の完全実装**
   - デフォルトユーザー: `testuser` / `password123`
   - `/token` エンドポイントでログイン
   - `/users/me` で認証情報取得
+  - Bearer トークン認証
 
-- **CORS設定済み**（Next.jsフロントエンド連携対応）
-  - `localhost:3000`、`localhost:3001` からのアクセス許可済み
+- **CORS設定済み**（React Vite フロントエンド連携対応）
+  - `localhost:5173`（Vite）、`localhost:3000`、`localhost:3001` からのアクセス許可済み
 
 - **Pydantic V2 によるバリデーション**
   - 型安全なAPIリクエスト・レスポンス
@@ -167,18 +242,47 @@ cp -r examples/python-fastapi/* /path/to/your/project/
 1. VSCodeでプロジェクトフォルダを開く
 2. `F1` → 「**Dev Containers: Reopen in Container**」
 3. 初回ビルドを待つ（5〜10分）
-4. 自動的にFastAPI開発サーバーが起動
+4. **データベース初期化（初回のみ必須）**:
+   ```bash
+   python init_db.py
+   ```
+5. バックエンドは自動起動、フロントエンドは別ターミナルで起動:
+   ```bash
+   npm run dev
+   ```
 
 #### 4. 動作確認
 
-- **アプリケーション**: http://localhost:8000
+**フロントエンド（React UI）:**
+- **React アプリケーション**: http://localhost:5173
+  - ログイン/新規登録UI
+  - ユーザー情報タブ
+  - アイテム管理タブ
+  - デフォルトユーザー: `testuser` / `password123`
+
+**バックエンド（FastAPI）:**
+- **APIサーバー**: http://localhost:8000
 - **Swagger UI**: http://localhost:8000/docs （インタラクティブなAPI テスト）
 - **ReDoc**: http://localhost:8000/redoc （きれいなAPIドキュメント）
 - **ヘルスチェック**: http://localhost:8000/health
+
+**データベース:**
 - **PostgreSQL**: `localhost:5433`
 - **Redis**: `localhost:6379`
 
-#### 5. APIの試し方（Swagger UIで）
+#### 5. React UIでのログイン手順
+
+1. ブラウザで http://localhost:5173 を開く
+2. 「ログイン」タブを選択（デフォルト）
+3. デフォルトユーザーでログイン:
+   - **username**: `testuser`
+   - **password**: `password123`
+4. ログイン成功後、以下の機能が利用可能:
+   - **ユーザー情報タブ**: 現在のユーザー情報を表示
+   - **アイテム管理タブ**: アイテムの作成・一覧表示
+   - **ログアウト**: 右上のボタンでログアウト
+
+#### 6. APIの試し方（Swagger UIで）
 
 1. http://localhost:8000/docs にアクセス
 2. **POST /token** を展開
@@ -189,33 +293,27 @@ cp -r examples/python-fastapi/* /path/to/your/project/
 7. トークンを貼り付けて「Authorize」
 8. これで認証が必要な他のAPIもテスト可能！
 
-#### 6. Next.jsフロントエンドとの連携
+#### 7. フロントエンド・バックエンド統合の仕組み
 
-FastAPIサンプルはNode.js（Next.js）フロントエンドとの連携を想定しています。
-
-**並行起動方法:**
-
-```bash
-# ターミナル1: FastAPIバックエンド
-cd examples/python-fastapi
-# VSCodeで "Reopen in Container"
-
-# ターミナル2: Next.jsフロントエンド
-cd examples/nodejs-postgres
-# VSCodeで別ウィンドウで "Reopen in Container"
+**アーキテクチャ:**
+```
+React (localhost:5173)
+  ↓ Vite プロキシ (/api → localhost:8000)
+  ↓ JWT トークン (localStorage)
+  ↓
+FastAPI (localhost:8000)
+  ↓ Bearer トークン認証
+  ↓
+PostgreSQL (localhost:5433)
+Redis (localhost:6379)
 ```
 
-**APIクライアント例（Next.js側）:**
-
-```typescript
-// lib/api.ts
-const response = await fetch('http://localhost:8000/users/me', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-  },
-  credentials: 'include',
-});
-```
+**認証フロー:**
+1. ユーザーがReact UIでログイン
+2. FastAPI `/token` エンドポイントにPOST
+3. JWTトークンを取得し localStorage に保存
+4. 以降のAPI呼び出しで自動的に `Authorization: Bearer <token>` ヘッダーを付与
+5. トークンが無効（401）の場合、自動的にログイン画面にリダイレクト
 
 ---
 

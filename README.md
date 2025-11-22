@@ -2,8 +2,8 @@
 
 **このリポジトリには、本格的なデータベース統合を含む3つの実践サンプルが付属しています：**
 - 🟢 [Node.js + PostgreSQL + Redis](examples/nodejs-postgres/) - Express + React フルスタック開発
-- 🔵 [FastAPI + PostgreSQL](examples/python-fastapi/) - モダンPythonバックエンド（2025年推奨）
-- 🟡 [Flask + PostgreSQL](examples/python-flask/) - シンプルなPythonバックエンド（学習向け）
+- 🔵 [FastAPI + React + PostgreSQL](examples/python-fastapi/) - FastAPI + React フルスタック + JWT認証（2025年推奨）
+- 🟡 [Flask + React + PostgreSQL](examples/python-flask/) - Flask + React フルスタック + JWT認証（学習向け）
 
 すべてのサンプルに詳細なREADME、テスト手順、データベース接続例が含まれています。
 
@@ -1414,17 +1414,21 @@ npm test
    - Express + TypeScript、React + Vite、PostgreSQL、Redis統合
    - リアルタイムデータベース接続テスト
 
-2. **FastAPI + PostgreSQL**: モダンPythonバックエンド（2025年推奨）
+2. **FastAPI + React + PostgreSQL**: フルスタック開発 + JWT認証（2025年推奨）
    - サンプルコード: [examples/python-fastapi/](examples/python-fastapi/)
    - 📖 詳細ドキュメント: [examples/python-fastapi/README.md](examples/python-fastapi/README.md)
+   - **React 19 + Vite 6** フロントエンド（Tailwind CSS）
+   - **JWT認証UI** 完全統合（ログイン/新規登録フォーム）
    - **PostgreSQL統合済み** (SQLAlchemy 2.0 + asyncpg)
-   - JWT認証、Swagger UI、完全な型安全性
+   - Swagger UI、完全な型安全性、認証ガード
 
-3. **Flask + PostgreSQL**: シンプルなPythonバックエンド（学習向け）
+3. **Flask + React + PostgreSQL**: フルスタック開発 + JWT認証（学習向け）
    - サンプルコード: [examples/python-flask/](examples/python-flask/)
    - 📖 詳細ドキュメント: [examples/python-flask/README.md](examples/python-flask/README.md)
+   - **React 19 + Vite 6** フロントエンド（Tailwind CSS）
+   - **JWT認証UI** 完全統合（ログイン/新規登録フォーム）
    - **PostgreSQL統合済み** (Flask-SQLAlchemy)
-   - シンプルなREST API、学習に最適
+   - シンプルで理解しやすい構成、学習に最適
 
 **すべてのサンプルに共通する特徴：**
 - ✅ 本物のPostgreSQLデータベース統合（モックではない）
@@ -1443,17 +1447,24 @@ npm test
 
 #### FastAPIサンプルの特徴
 
-FastAPIサンプルは、実際のプロダクション環境を想定した **本格的なデータベース統合** を実装しています：
+FastAPIサンプルは、**フルスタック開発環境**として、React フロントエンドと FastAPI バックエンドが完全統合されています：
 
 **ファイル構成:**
 ```
 examples/python-fastapi/
-├── main.py           # FastAPIアプリケーション（エンドポイント定義）
+├── client/           # Reactフロントエンド
+│   ├── src/
+│   │   ├── components/  # Login, UserList, ItemList
+│   │   ├── App.tsx      # 認証状態管理
+│   │   └── api.ts       # JWT トークン管理
+│   └── vite.config.ts   # Vite設定（APIプロキシ）
+├── main.py           # FastAPIアプリケーション（JWT認証付き）
 ├── database.py       # SQLAlchemy非同期エンジンとセッション管理
 ├── models.py         # データベーステーブル定義（User、Item）
 ├── crud.py           # データベースCRUD操作（非同期）
 ├── init_db.py        # データベース初期化スクリプト
-├── requirements.txt  # 本番用依存関係
+├── package.json      # npm依存関係（React, Vite, Tailwind）
+├── requirements.txt  # Python本番用依存関係
 └── .devcontainer/    # Dev Container設定
     ├── devcontainer.json
     └── docker-compose.yml
@@ -1464,29 +1475,41 @@ examples/python-fastapi/
 - **items**: id, title, description, price, owner_id, created_at, updated_at
 
 **主要機能:**
+- ✅ **React 19 + Vite 6** フロントエンド（Tailwind CSS）
+- ✅ **JWT認証UI** - ログイン/新規登録フォーム完備
+- ✅ **認証ガード** - トークンベースのルーティング保護
 - ✅ PostgreSQL統合 (SQLAlchemy 2.0 + asyncpg)
-- ✅ JWT認証（トークンベース）
+- ✅ JWT認証（バックエンド - Bearer トークン）
 - ✅ Pydantic V2による型安全なバリデーション
 - ✅ 自動生成されるAPI ドキュメント（Swagger UI / ReDoc）
-- ✅ CORS設定済み（Next.js連携対応）
+- ✅ CORS設定済み（React Vite + Next.js連携対応）
 - ✅ Ruff linter（2025年推奨）
 
-**データベース初期化:**
+**セットアップ手順:**
 ```bash
-# Dev Container起動後、初回のみ実行
+# 1. Dev Container起動後、データベース初期化（初回のみ）
 python init_db.py
+
+# 2. フロントエンド起動（別ターミナル）
+npm run dev
 ```
 
 これにより以下が作成されます：
 - データベーステーブル（users、items）
 - テストユーザー（username: testuser, password: password123）
 
+**動作確認:**
+
+**React UIで確認（推奨）:**
+1. ブラウザで http://localhost:5173 を開く
+2. デフォルトユーザーでログイン: `testuser` / `password123`
+3. ユーザー情報タブ、アイテム管理タブで機能を確認
+
 **API ドキュメント:**
-Dev Container起動後、ブラウザで以下にアクセス：
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-**動作確認:**
+**curlで確認:**
 ```bash
 # ヘルスチェック
 curl http://localhost:8000/health
@@ -1506,14 +1529,21 @@ curl -X POST "http://localhost:8000/token" \
 
 #### Flaskサンプルの特徴
 
-Flaskサンプルも、FastAPIと同様に **本格的なPostgreSQLデータベース統合** を実装しています。シンプルで学習しやすい構成になっています。
+Flaskサンプルは、**フルスタック開発環境**として、React フロントエンドと Flask バックエンドが完全統合されています。FastAPIサンプルと同様の機能を持ちつつ、シンプルで学習しやすい構成になっています。
 
 **ファイル構成:**
 ```
 examples/python-flask/
-├── app.py            # Flaskアプリケーション本体（モデル含む）
+├── client/           # Reactフロントエンド
+│   ├── src/
+│   │   ├── components/  # Login, UserList, ItemList
+│   │   ├── App.tsx      # 認証状態管理
+│   │   └── api.ts       # JWT トークン管理
+│   └── vite.config.ts   # Vite設定（APIプロキシ）
+├── app.py            # Flaskアプリケーション本体（JWT認証付き）
 ├── init_db.py        # データベース初期化スクリプト
-├── requirements.txt  # 依存関係
+├── package.json      # npm依存関係（React, Vite, Tailwind）
+├── requirements.txt  # Python依存関係
 └── .devcontainer/    # Dev Container設定
     ├── devcontainer.json
     └── docker-compose.yml
@@ -1524,33 +1554,54 @@ examples/python-flask/
 - **items**: id, title, description, price, owner_id, created_at
 
 **主要機能:**
+- ✅ **React 19 + Vite 6** フロントエンド（Tailwind CSS）
+- ✅ **JWT認証UI** - ログイン/新規登録フォーム完備
+- ✅ **認証ガード** - トークンベースのルーティング保護
 - ✅ PostgreSQL統合 (Flask-SQLAlchemy)
+- ✅ JWT認証（バックエンド - Bearer トークン）
 - ✅ パスワードハッシュ化（Flask-Bcrypt）
-- ✅ CORS設定済み
+- ✅ CORS設定済み（React Vite連携対応）
 - ✅ RESTful API（GET, POST, PUT, DELETE）
 - ✅ ページネーション対応
+- ✅ シンプルな構成（学習に最適）
 
-**データベース初期化:**
+**セットアップ手順:**
 ```bash
-# Dev Container起動後、初回のみ実行
+# 1. Dev Container起動後、データベース初期化（初回のみ）
 python init_db.py
+
+# 2. フロントエンド起動（別ターミナル）
+npm run dev
 ```
 
+これにより以下が作成されます：
+- データベーステーブル（users、items）
+- テストユーザー（username: testuser, password: password123）
+
 **動作確認:**
+
+**React UIで確認（推奨）:**
+1. ブラウザで http://localhost:5173 を開く
+2. デフォルトユーザーでログイン: `testuser` / `password123`
+3. ユーザー情報タブ、アイテム管理タブで機能を確認
+
+**API直接テスト:**
 ```bash
 # ヘルスチェック
-curl http://localhost:5000/health
+curl http://localhost:5001/health
 
 # データベース接続テスト
-curl http://localhost:5000/api/db-test
+curl http://localhost:5001/api/db-test
 
-# ユーザー一覧
-curl http://localhost:5000/api/users
-
-# ユーザー登録
-curl -X POST "http://localhost:5000/api/users" \
+# ユーザー登録（JWTトークン付与）
+curl -X POST "http://localhost:5001/auth/register" \
   -H "Content-Type: application/json" \
   -d '{"username":"newuser","email":"new@example.com","password":"password123"}'
+
+# ログイン（JWTトークン取得）
+curl -X POST "http://localhost:5001/auth/token" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"password123"}'
 ```
 
 詳細は [Flask サンプルREADME](examples/python-flask/README.md) を参照してください。

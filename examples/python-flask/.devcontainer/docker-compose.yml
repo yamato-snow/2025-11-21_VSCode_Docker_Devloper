@@ -13,7 +13,8 @@ services:
       - ..:/workspace:cached
 
     ports:
-      - "5001:5000"
+      - "5001:5000"    # Flask API (5001 on host to avoid macOS AirPlay conflict)
+      - "5173:5173"    # Vite + React
 
     environment:
       - FLASK_APP=app.py
@@ -26,7 +27,8 @@ services:
       db:
         condition: service_healthy
 
-    command: flask run --host=0.0.0.0 --debug
+    # 開発サーバー起動（Flask + Vite 両方を自動起動）
+    command: sh -c "npm run dev & flask run --host=0.0.0.0 --debug"
 
   # ==========================================
   # PostgreSQLデータベース

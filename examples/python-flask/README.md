@@ -1,15 +1,25 @@
-# Flask + PostgreSQL Dev Container Example
+# Flask + React + PostgreSQL Fullstack Dev Container Example
 
-このディレクトリには、VSCode Dev Containersで動作するFlask + PostgreSQLのシンプルなバックエンド開発環境サンプルが含まれています。
+このディレクトリには、VSCode Dev Containersで動作するFlask + React + PostgreSQLのフルスタック開発環境サンプルが含まれています。
 
 ## 🌟 特徴
 
-- **Flask**: Pythonの軽量かつ柔軟なWebフレームワーク
+### バックエンド（Flask）
+- **Flask**: Pythonの軽量かつ柔軟なWebフレームワーク（WSGI）
 - **PostgreSQL**: 本番環境対応のリレーショナルデータベース
 - **Flask-SQLAlchemy**: Flaskに最適化されたORM
+- **JWT認証**: トークンベースの認証システム
 - **Flask-Bcrypt**: パスワードハッシュ化
-- **Flask-CORS**: クロスオリジン対応
+- **Flask-CORS**: クロスオリジン対応（React連携）
 - **シンプルな構成**: 学習に最適な最小限の実装
+
+### フロントエンド（React）
+- **React 19**: 最新のReactフレームワーク
+- **Vite 6**: 超高速ビルドツール
+- **TypeScript**: 型安全な開発環境
+- **Tailwind CSS**: ユーティリティファーストCSS
+- **JWT認証UI**: ログイン/新規登録フォーム
+- **認証ガード**: トークンベースのルーティング保護
 
 ## 📁 プロジェクト構造
 
@@ -18,8 +28,23 @@ python-flask/
 ├── .devcontainer/          # Dev Container設定
 │   ├── devcontainer.json   # VSCode Dev Container設定
 │   └── docker-compose.yml  # 開発環境用Docker Compose
+├── client/                 # Reactフロントエンド
+│   ├── src/
+│   │   ├── components/     # Reactコンポーネント
+│   │   │   ├── Login.tsx   # ログイン/新規登録UI
+│   │   │   ├── UserList.tsx # ユーザー情報表示
+│   │   │   └── ItemList.tsx # アイテム管理
+│   │   ├── App.tsx         # メインアプリケーション
+│   │   ├── api.ts          # API クライアント（JWT認証付き）
+│   │   ├── main.tsx        # エントリポイント
+│   │   └── index.css       # Tailwind CSS
+│   ├── vite.config.ts      # Vite設定
+│   ├── tsconfig.json       # TypeScript設定
+│   └── index.html          # HTMLテンプレート
 ├── app.py                  # Flaskアプリケーション本体（モデル含む）
 ├── init_db.py              # データベース初期化スクリプト
+├── package.json            # npm依存パッケージ
+├── tailwind.config.js      # Tailwind CSS設定
 ├── requirements.txt        # Python依存パッケージ
 ├── Dockerfile              # Multi-stage Dockerfile
 ├── docker-compose.yml      # 本番環境用Docker Compose
@@ -102,59 +127,118 @@ python init_db.py
   username: testuser
   password: password123
 
-APIテスト:
-  curl http://localhost:5000/health
-  curl http://localhost:5000/api/users
+React UI でログイン:
+  http://localhost:5173
 ============================================================
 ```
 
 ### 4. 開発サーバー起動
 
-データベース初期化後、開発サーバーを起動:
+データベース初期化後、バックエンドとフロントエンドの開発サーバーを起動します。
+
+#### バックエンド（Flask）
 
 ```bash
 # Dev Containerでは自動起動されますが、手動起動する場合:
 python app.py
 
-# または
-flask run --host=0.0.0.0 --port=5000
+# または Flask CLI を使用:
+flask run --host=0.0.0.0 --port=5000 --debug
 ```
 
-### 5. 動作確認
+バックエンドは **http://localhost:5001** で起動します。
+
+#### フロントエンド（React + Vite）
+
+**新しいターミナルを開いて**以下を実行:
+
+```bash
+npm run dev
+```
+
+フロントエンドは **http://localhost:5173** で起動します。
+
+**📝 重要:** バックエンドとフロントエンドは**両方同時に起動**する必要があります。フロントエンドはバックエンドAPIを呼び出すため、両方が起動している状態で動作します。
+
+### 5. フロントエンド（React UI）での動作確認
+
+ブラウザで **http://localhost:5173** にアクセスすると、ログイン画面が表示されます。
+
+#### ログイン手順
+
+1. ブラウザで http://localhost:5173 を開く
+2. 「ログイン」タブを選択（デフォルト）
+3. 以下のデフォルトユーザー情報でログイン:
+   - **username**: `testuser`
+   - **password**: `password123`
+4. ログイン成功後、ユーザー情報とアイテム管理画面が表示されます
+
+#### 新規ユーザー登録
+
+1. 「新規登録」タブに切り替え
+2. ユーザー名、メールアドレス、パスワード（8文字以上）を入力
+3. 登録完了後、自動的にログインされます
+
+#### UI機能
+
+- **ユーザー情報タブ**: 現在のログインユーザーの情報を表示
+- **アイテム管理タブ**: アイテムの作成・一覧表示
+- **ログアウト**: 右上のボタンでログアウト（トークンが削除されます）
+
+### 6. バックエンドAPI（直接テスト）での動作確認
 
 ブラウザまたはcurlで以下のエンドポイントにアクセス:
 
 ```bash
 # ルートエンドポイント
-curl http://localhost:5000
+curl http://localhost:5001
 
 # ヘルスチェック
-curl http://localhost:5000/health
+curl http://localhost:5001/health
 
 # データベース接続テスト
-curl http://localhost:5000/api/db-test
+curl http://localhost:5001/api/db-test
 ```
 
 詳細なテスト手順は「🧪 詳細なテスト方法」セクションを参照してください。
 
 ## 📋 利用可能なコマンド
 
+### バックエンド（Flask）
+
 | コマンド | 説明 |
 |---------|------|
 | `python app.py` | 開発サーバー起動（デバッグモード） |
-| `flask run` | Flaskの標準起動コマンド |
+| `flask run --debug` | Flask CLI使用（デバッグモード） |
 | `python init_db.py` | データベース初期化（テーブル作成＋初期データ） |
 | `black .` | コードフォーマット（Black） |
 | `pylint app.py` | コード品質チェック（Pylint） |
 
+### フロントエンド（React）
+
+| コマンド | 説明 |
+|---------|------|
+| `npm run dev` | Vite開発サーバー起動（ポート5173） |
+| `npm run build` | 本番用ビルド |
+| `npm run preview` | ビルド後のプレビュー |
+
 ## 🔌 サービス構成
 
-### アプリケーション (api)
-- **ポート**: 5000
+### フロントエンド (React + Vite)
+- **ポート**: 5173
+- **フレームワーク**: React 19 + Vite 6
+- **スタイリング**: Tailwind CSS
+- **型安全性**: TypeScript
+- **認証**: JWT トークン（localStorage保存）
+- **APIプロキシ**: `/api` → `http://localhost:5001`
+
+### バックエンド (app)
+- **ポート**: 5001 (ホスト), 5000 (コンテナ)
 - **フレームワーク**: Flask（WSGI）
 - **ORM**: Flask-SQLAlchemy
+- **認証**: JWT（JSON Web Token）
 - **パスワードハッシュ**: Flask-Bcrypt
-- **CORS**: Flask-CORS
+- **CORS**: React Vite (port 5173) 対応
 
 ### PostgreSQL (db)
 - **ポート**: 5433 (ホストからアクセス) / 5432 (コンテナ間通信)
@@ -167,25 +251,45 @@ curl http://localhost:5000/api/db-test
 
 Dev Container内に以下のツールが自動インストールされます:
 
+### バックエンド（Python）
 - **Python 3.11**
 - **Flask, SQLAlchemy, psycopg2**
-- **Flask-Bcrypt, Flask-CORS, Flask-RESTful**
+- **Flask-Bcrypt, Flask-CORS, Flask-JWT-Extended**
 - **Black** (コードフォーマッター)
 - **Pylint** (静的解析ツール)
 - **PostgreSQL Client** (psql)
+
+### フロントエンド（Node.js）
+- **Node.js 20.x**
+- **npm** (パッケージマネージャー)
+- **React 19, Vite 6, TypeScript**
+- **Tailwind CSS**
+
+### 共通ツール
 - **Git, Vim, Curl, Wget**
 - **GitHub CLI** (gh)
+- **Docker** (Docker-in-Docker)
 
 ### VSCode拡張機能
 
 以下の拡張機能がコンテナ内に自動インストールされます:
 
+#### Python開発
 - Python
 - Pylance
 - Black Formatter
 - Pylint
-- Docker
+
+#### React/TypeScript開発
+- ESLint
+- Prettier
+- Tailwind CSS IntelliSense
+- ES7+ React/Redux/React-Native snippets
+
+#### データベース・その他
 - SQLTools (PostgreSQL接続)
+- Docker
+- REST Client (API テスト)
 
 ## 🧪 詳細なテスト方法
 
@@ -200,7 +304,7 @@ Dev Container内に以下のツールが自動インストールされます:
 APIの基本情報を取得します。
 
 ```bash
-curl http://localhost:5000
+curl http://localhost:5001
 ```
 
 **期待される出力:**
@@ -213,7 +317,12 @@ curl http://localhost:5000
     "health": "/health",
     "users": "/api/users",
     "items": "/api/items",
-    "database_test": "/api/db-test"
+    "database_test": "/api/db-test",
+    "auth": {
+      "register": "/auth/register",
+      "token": "/auth/token",
+      "me": "/auth/me"
+    }
   }
 }
 ```
@@ -223,7 +332,7 @@ curl http://localhost:5000
 アプリケーションの健全性を確認します。
 
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:5001/health
 ```
 
 **期待される出力:**
@@ -239,7 +348,7 @@ curl http://localhost:5000/health
 PostgreSQLへの接続が正常に機能しているか確認します。
 
 ```bash
-curl http://localhost:5000/api/db-test
+curl http://localhost:5001/api/db-test
 ```
 
 **期待される出力:**
@@ -254,79 +363,65 @@ curl http://localhost:5000/api/db-test
 }
 ```
 
-### 4. ユーザー一覧取得（GET /api/users）
+### 4. JWT認証のテスト
 
-登録されているユーザーの一覧を取得します。
-
-```bash
-curl http://localhost:5000/api/users
-```
-
-**期待される出力:**
-```json
-{
-  "users": [
-    {
-      "id": 1,
-      "username": "testuser",
-      "email": "test@example.com",
-      "is_active": true,
-      "created_at": "2025-11-22T10:00:00.000000"
-    }
-  ],
-  "total": 1,
-  "page": 1,
-  "per_page": 10
-}
-```
-
-**ページネーション:**
-```bash
-# 2ページ目を取得（1ページあたり5件）
-curl "http://localhost:5000/api/users?page=2&per_page=5"
-```
-
-### 5. ユーザー登録（POST /api/users）
-
-新しいユーザーを作成します。
+#### ユーザー登録（POST /auth/register）
 
 ```bash
-curl -X POST "http://localhost:5000/api/users" \
+curl -X POST "http://localhost:5001/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "newuser",
     "email": "newuser@example.com",
-    "password": "securepassword123"
+    "password": "securepass123"
   }'
 ```
 
 **期待される出力:**
 ```json
 {
-  "message": "User created successfully",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
   "user": {
     "id": 2,
     "username": "newuser",
     "email": "newuser@example.com",
-    "is_active": true,
-    "created_at": "2025-11-22T10:35:00.000000"
+    "is_active": true
   }
 }
 ```
 
-**エラーケース（重複ユーザー名）:**
+#### ログイン（POST /auth/token）
+
+```bash
+curl -X POST "http://localhost:5001/auth/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "password": "password123"
+  }'
+```
+
+**期待される出力:**
 ```json
 {
-  "error": "Username already exists"
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer"
 }
 ```
 
-### 6. ユーザー詳細取得（GET /api/users/{user_id}）
-
-特定のユーザーの情報を取得します。
+#### 認証済みユーザー情報取得（GET /auth/me）
 
 ```bash
-curl http://localhost:5000/api/users/1
+# まずトークンを取得
+TOKEN=$(curl -s -X POST "http://localhost:5001/auth/token" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"password123"}' \
+  | jq -r '.access_token')
+
+# トークンを使用してユーザー情報を取得
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:5001/auth/me
 ```
 
 **期待される出力:**
@@ -340,19 +435,12 @@ curl http://localhost:5000/api/users/1
 }
 ```
 
-**エラーケース（存在しないユーザー）:**
-```json
-{
-  "error": "Not found"
-}
-```
+### 5. アイテムAPI（認証不要）
 
-### 7. アイテム作成（POST /api/items）
-
-新しいアイテムを作成します。
+#### アイテム作成（POST /api/items）
 
 ```bash
-curl -X POST "http://localhost:5000/api/items" \
+curl -X POST "http://localhost:5001/api/items" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Sample Product",
@@ -377,12 +465,10 @@ curl -X POST "http://localhost:5000/api/items" \
 }
 ```
 
-### 8. アイテム一覧取得（GET /api/items）
-
-すべてのアイテムを取得します。
+#### アイテム一覧取得（GET /api/items）
 
 ```bash
-curl http://localhost:5000/api/items
+curl http://localhost:5001/api/items
 ```
 
 **期待される出力:**
@@ -401,100 +487,6 @@ curl http://localhost:5000/api/items
   "total": 1,
   "page": 1,
   "per_page": 10
-}
-```
-
-### 9. アイテム詳細取得（GET /api/items/{item_id}）
-
-特定のアイテムを取得します。
-
-```bash
-curl http://localhost:5000/api/items/1
-```
-
-**期待される出力:**
-```json
-{
-  "id": 1,
-  "title": "Sample Product",
-  "description": "This is a sample product",
-  "price": 99.99,
-  "owner_id": 1,
-  "created_at": "2025-11-22T10:40:00.000000"
-}
-```
-
-### 10. アイテム更新（PUT /api/items/{item_id}）
-
-既存のアイテムを更新します。
-
-```bash
-curl -X PUT "http://localhost:5000/api/items/1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Updated Product",
-    "price": 149.99
-  }'
-```
-
-**期待される出力:**
-```json
-{
-  "message": "Item updated successfully",
-  "item": {
-    "id": 1,
-    "title": "Updated Product",
-    "description": "This is a sample product",
-    "price": 149.99,
-    "owner_id": 1,
-    "created_at": "2025-11-22T10:40:00.000000"
-  }
-}
-```
-
-### 11. アイテム削除（DELETE /api/items/{item_id}）
-
-アイテムを削除します。
-
-```bash
-curl -X DELETE "http://localhost:5000/api/items/1"
-```
-
-**期待される出力:**
-```json
-{
-  "message": "Item deleted successfully"
-}
-```
-
-### 12. ユーザーのアイテム一覧（GET /api/users/{user_id}/items）
-
-特定のユーザーが所有するアイテムを取得します。
-
-```bash
-curl http://localhost:5000/api/users/1/items
-```
-
-**期待される出力:**
-```json
-{
-  "user": {
-    "id": 1,
-    "username": "testuser",
-    "email": "test@example.com",
-    "is_active": true,
-    "created_at": "2025-11-22T10:00:00.000000"
-  },
-  "items": [
-    {
-      "id": 1,
-      "title": "Sample Product",
-      "description": "This is a sample product",
-      "price": 99.99,
-      "owner_id": 1,
-      "created_at": "2025-11-22T10:40:00.000000"
-    }
-  ]
 }
 ```
 
@@ -536,20 +528,6 @@ FROM items i
 JOIN users u ON i.owner_id = u.id
 WHERE u.username = 'testuser';
 
--- アイテムの統計
-SELECT
-  COUNT(*) as total_items,
-  AVG(price) as avg_price,
-  MAX(price) as max_price,
-  MIN(price) as min_price
-FROM items;
-
--- ユーザーごとのアイテム数
-SELECT u.username, COUNT(i.id) as item_count
-FROM users u
-LEFT JOIN items i ON u.id = i.owner_id
-GROUP BY u.username;
-
 -- 終了
 \q
 ```
@@ -567,30 +545,56 @@ python init_db.py
 
 ## 🌐 CORS設定（フロントエンド連携）
 
-Flask-CORSが設定されており、すべてのオリジンからのリクエストを受け付けます（開発環境用）。
+React Vite フロントエンドとの連携用にCORSが設定済みです。
 
-**本番環境では制限することを推奨:**
-
+**デフォルト設定（開発環境）:**
 ```python
 # app.py
 CORS(app, resources={
-    r"/api/*": {
-        "origins": ["http://localhost:3000", "http://your-frontend-domain.com"]
+    r"/*": {
+        "origins": ["http://localhost:5173"],
+        "supports_credentials": True
     }
 })
 ```
 
-### フロントエンド連携の例（Next.js）
+**本番環境では制限することを推奨:**
+```python
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["https://your-frontend-domain.com"],
+        "supports_credentials": True
+    }
+})
+```
 
-```javascript
-// Next.js API呼び出し例
-const response = await fetch('http://localhost:5000/api/items', {
-  method: 'GET',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-const data = await response.json();
+### フロントエンド連携の仕組み
+
+React フロントエンド（[client/src/api.ts](client/src/api.ts)）は以下の方法でバックエンドと通信します:
+
+1. **Vite プロキシ設定**: `/api/*` と `/auth/*` リクエストを `http://localhost:5001` にプロキシ
+2. **JWT トークン管理**: localStorage にトークンを保存し、自動的にリクエストヘッダーに付与
+3. **認証ガード**: トークンがない場合はログイン画面にリダイレクト
+
+```typescript
+// client/src/api.ts の実装例
+async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = getToken();
+  const headers: HeadersInit = { ...options.headers };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { ...options, headers });
+
+  if (response.status === 401) {
+    removeToken();
+    throw new Error('Authentication failed. Please login again.');
+  }
+
+  return response;
+}
 ```
 
 ## 📝 環境変数
@@ -607,6 +611,7 @@ cp .env.example .env
 # Flask設定
 FLASK_ENV=development
 SECRET_KEY=dev_secret_key_change_in_production
+JWT_SECRET_KEY=jwt_secret_key_change_in_production
 
 # データベース設定（コンテナ間通信）
 DATABASE_URL=postgresql://postgres:postgres@db:5432/flask_app
@@ -628,10 +633,10 @@ docker build --target production -t flask-app:latest .
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # 動作確認
-curl http://localhost:5000/health
+curl http://localhost:5001/health
 
 # ログ確認
-docker compose logs api -f
+docker compose logs app -f
 
 # 停止
 docker compose -f docker-compose.yml -f docker-compose.prod.yml down
@@ -639,9 +644,37 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 
 ## 🐛 トラブルシューティング
 
-### エラー: テーブルが存在しない
+### Dev Container ビルドエラー「curl: not found」
 
-**原因:** データベース初期化が実行されていない
+**症状:** Dev Container のビルド中に以下のエラーが発生:
+```
+> [app development 3/9] RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+0.159 /bin/sh: 1: curl: not found
+```
+
+**原因:** Dockerfile 内で、`curl` コマンドがインストールされる前に Node.js のインストールに使用しようとしている
+
+**解決方法:**
+
+[Dockerfile](Dockerfile:12-23) の RUN コマンドの順序が正しいことを確認してください:
+
+```dockerfile
+# ✅ 正しい順序: 先に curl をインストール
+RUN apt-get update && apt-get install -y \
+    git vim curl postgresql-client gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# その後 curl を使用して Node.js をインストール
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+```
+
+修正後、コンテナを再ビルド:
+- **F1** → `Dev Containers: Rebuild Container`
+
+### 「Internal Server Error」が発生
+
+**原因:** データベーステーブルが作成されていない
 
 **解決方法:**
 ```bash
@@ -655,7 +688,7 @@ python init_db.py
 docker ps
 
 # ログを確認
-docker compose logs api
+docker compose logs app
 
 # コンテナを再構築
 # F1 → "Dev Containers: Rebuild Container"
@@ -665,10 +698,10 @@ docker compose logs api
 
 ```bash
 # ポート使用状況確認（macOS/Linux）
-lsof -i :5000
+lsof -i :5001
 
 # Windows
-netstat -ano | findstr :5000
+netstat -ano | findstr :5001
 
 # devcontainer.jsonのforwardPortsを変更
 ```
@@ -686,81 +719,14 @@ python -c "from app import app; print(app.config['SQLALCHEMY_DATABASE_URI'])"
 docker compose restart db
 ```
 
-### インポートエラー
+### JWT認証エラー
 
 ```bash
-# 依存パッケージを再インストール
-pip install -r requirements.txt
+# トークンの有効期限切れ
+# → 再度ログインしてトークンを取得
 
-# 仮想環境が正しくアクティベートされているか確認
-which python
-```
-
-## 🎯 統合テストスクリプト
-
-すべてのエンドポイントを順番にテストするスクリプト例:
-
-```bash
-#!/bin/bash
-set -e
-
-echo "=== Flask + PostgreSQL 統合テスト ==="
-echo ""
-
-# 1. ヘルスチェック
-echo "1. ヘルスチェック"
-curl -s http://localhost:5000/health | jq .
-echo ""
-
-# 2. データベース接続テスト
-echo "2. データベース接続テスト"
-curl -s http://localhost:5000/api/db-test | jq .
-echo ""
-
-# 3. ユーザー一覧取得
-echo "3. ユーザー一覧取得"
-curl -s http://localhost:5000/api/users | jq .
-echo ""
-
-# 4. ユーザー登録
-echo "4. ユーザー登録"
-curl -s -X POST "http://localhost:5000/api/users" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"testuser2","email":"testuser2@example.com","password":"password123"}' \
-  | jq .
-echo ""
-
-# 5. ユーザー詳細取得
-echo "5. ユーザー詳細取得"
-curl -s http://localhost:5000/api/users/1 | jq .
-echo ""
-
-# 6. アイテム作成
-echo "6. アイテム作成"
-curl -s -X POST "http://localhost:5000/api/items" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Test Item","description":"Test Description","price":123.45,"owner_id":1}' \
-  | jq .
-echo ""
-
-# 7. アイテム一覧取得
-echo "7. アイテム一覧取得"
-curl -s http://localhost:5000/api/items | jq .
-echo ""
-
-# 8. ユーザーのアイテム一覧
-echo "8. ユーザーのアイテム一覧"
-curl -s http://localhost:5000/api/users/1/items | jq .
-echo ""
-
-echo "=== テスト完了 ==="
-```
-
-このスクリプトを `test.sh` として保存し、実行権限を付与して実行:
-
-```bash
-chmod +x test.sh
-./test.sh
+# SECRET_KEYが設定されていない
+# → .env ファイルを作成して SECRET_KEY と JWT_SECRET_KEY を設定
 ```
 
 ## 📚 Flask vs FastAPI の比較
@@ -777,7 +743,7 @@ chmod +x test.sh
 
 ### FastAPIの利点
 
-- **高速**: 非同期処理でパフォーマンスが高い
+- **高速**: 非同期処理でパフォーマンスが高い（3-4倍）
 - **自動ドキュメント**: Swagger UI / ReDocが自動生成される
 - **型安全**: Pydanticによる自動バリデーション
 - **モダン**: 最新のPython機能を活用（async/await, type hints）
@@ -797,11 +763,15 @@ chmod +x test.sh
 - 自動ドキュメントが欲しい
 - 非同期処理を活用したい
 
+詳細な比較は [メインREADME](../../README.md#pythonフレームワーク選択flask-vs-fastapi2025年版) を参照してください。
+
 ## 📚 参考リンク
 
 - [メインREADME](../../README.md) - VSCode + Docker開発環境の包括的ガイド
 - [Flask公式ドキュメント](https://flask.palletsprojects.com/)
 - [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/)
+- [Flask-JWT-Extended](https://flask-jwt-extended.readthedocs.io/)
 - [SQLAlchemy ドキュメント](https://docs.sqlalchemy.org/)
 - [VSCode Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers)
-- [PostgreSQL ドキュメント](https://www.postgresql.org/docs/)
+- [React公式ドキュメント](https://react.dev/)
+- [Vite公式ドキュメント](https://vitejs.dev/)
