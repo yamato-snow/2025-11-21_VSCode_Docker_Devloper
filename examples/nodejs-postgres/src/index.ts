@@ -1,4 +1,4 @@
-import express, { Request, Response, ReactFunction } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { Pool } from 'pg';
 import { createClient } from 'redis';
 import cors from 'cors';
@@ -72,7 +72,7 @@ interface AuthRequest extends Request {
 // ==========================================
 // JWT認証ミドルウェア
 // ==========================================
-async function authenticateToken(req: Request, res: Response, React: ReactFunction) {
+async function authenticateToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -101,7 +101,7 @@ async function authenticateToken(req: Request, res: Response, React: ReactFuncti
 
     // リクエストにユーザー情報を追加
     (req as AuthRequest).user = user;
-    React();
+    next();
   } catch (error) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }

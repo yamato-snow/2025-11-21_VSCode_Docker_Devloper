@@ -11,6 +11,85 @@
 - **認証UI**: ログイン/新規登録フォーム付きReactアプリケーション
 - **トークン管理**: localStorage による永続的なセッション管理
 
+## 🚀 使用フレームワーク: Express.js
+
+このサンプルプロジェクトでは、バックエンドフレームワークとして **Express.js** を使用しています。
+
+### Express.jsとは
+
+Express.jsは、Node.js上で動作する**軽量で柔軟なWebアプリケーションフレームワーク**です。
+
+**主な特徴:**
+- **ミニマリズム** - 最小限の機能のみ提供、必要な機能を自由に追加
+- **ミドルウェアアーキテクチャ** - リクエストを順番に処理するパイプライン
+- **業界標準** - npm週間ダウンロード3000万+、最も人気のあるNode.jsフレームワーク
+- **シンプルなAPI** - 学習コストが低く、5分で動くものが作れる
+
+**コード例（このプロジェクトより）:**
+```typescript
+import express, { Request, Response, NextFunction } from 'express';
+
+const app = express();
+
+// ミドルウェアチェーン
+app.use(express.json());       // JSONパース
+app.use(cors(corsOptions));    // CORS設定
+
+// 認証ミドルウェア
+async function authenticateToken(req: Request, res: Response, next: NextFunction) {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    req.user = decoded.user;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// 保護されたエンドポイント
+app.get('/api/users', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const result = await pgPool.query('SELECT * FROM users');
+    res.json({ users: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.listen(3000);
+```
+
+### Express.js vs 他のNode.jsフレームワーク（2025年版）
+
+| フレームワーク | 特徴 | 適したユースケース |
+|--------------|------|------------------|
+| **Express.js** | シンプル、業界標準 | 学習、小〜中規模プロジェクト |
+| **Fastify** | 高速（2-3倍）、TypeScript完全対応 | 本番運用、高トラフィックAPI |
+| **NestJS** | エンタープライズ向け、構造化 | 大規模プロジェクト、チーム開発 |
+| **Koa** | async/awaitネイティブ、軽量 | モダンなマイクロサービス |
+
+### なぜこのサンプルでExpress.jsを使用しているか
+
+**学習用として最適な選択です:**
+
+✅ **メリット**
+1. **学習コストが低い** - 5分で動くものが作れる、挫折しにくい
+2. **求人が最も多い** - 業界標準、学習すれば仕事に直結
+3. **豊富なドキュメント** - Stack Overflowに大量の情報
+4. **エコシステムが充実** - passport（認証）、helmet（セキュリティ）など
+
+**本番運用の新規プロジェクトでは:**
+- **Fastify** - パフォーマンスとTypeScript対応のバランスが良い
+- **NestJS** - 大規模プロジェクトや10人以上のチーム開発
+
+**詳細な比較は[メインREADMEのNode.jsフレームワーク選択セクション](../../README.md#nodejsフレームワーク選択expressjs-vs-fastify-vs-nestjs-vs-koa2025年版)を参照してください。**
+
+---
+
 ## 📁 構成
 
 ```
