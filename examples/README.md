@@ -6,11 +6,11 @@
 
 ```
 examples/
-├── nodejs-postgres/      # Node.js (Express + React) + DB（フルスタック開発用）
-│   ├── .devcontainer/    # フロントエンド: React 19 + Vite 6
+├── nodejs-postgres/      # Node.js (Express + React) + DB（フルスタック開発用 + JWT認証）
+│   ├── .devcontainer/    # フロントエンド: React 19 + Vite 6 + JWT認証UI
 │   │   ├── devcontainer.json  # バックエンド: Express + PostgreSQL + Redis
 │   │   └── docker-compose.yml
-│   ├── client/           # Reactフロントエンド
+│   ├── client/           # Reactフロントエンド（JWT認証付き）
 │   ├── Dockerfile
 │   ├── package.json
 │   ├── docker-compose.yml
@@ -49,8 +49,11 @@ examples/
 ### Node.js (Express + React) フルスタックプロジェクト
 
 **このサンプルは:**
-- React (Vite) + Express フルスタック開発用
+- **Express + React 19 フルスタック開発用**
+- **フロントエンド**: React 19 + Vite 6 + Tailwind CSS + JWT認証UI
+- **バックエンド**: Express + TypeScript + PostgreSQL + Redis
 - フルスタック構成（フロントエンド + バックエンドAPI + データベース + キャッシュ）
+- JWT認証が完全統合（ログイン/新規登録UI付き）
 - PostgreSQL（データベース）とRedis（キャッシュ）を含む
 
 #### 1. プロジェクトのコピー
@@ -60,12 +63,30 @@ examples/
 cp -r examples/nodejs-postgres/* /path/to/your/project/
 ```
 
-#### 2. 必要なファイルの準備
+#### 2. サンプルコードの特徴
 
-プロジェクトルートに以下のファイルが必要です：
-- `package.json`: Node.jsの依存関係
-- `tsconfig.json`: TypeScript設定（TypeScript使用時）
-- `src/`: ソースコードディレクトリ
+このプロジェクトは**完全統合されたフルスタック環境**です：
+
+**フロントエンド（React）:**
+- **React 19 + Vite 6 + TypeScript** による最新スタック
+- **Tailwind CSS** でスタイリング
+- **JWT認証UI** - ログイン/新規登録フォーム完備
+- **認証ガード** - トークンベースのルーティング保護
+- ユーザー情報表示、アイテム管理UI
+
+**バックエンド（Express）:**
+- **JWT認証の完全実装**
+  - デフォルトユーザー: `testuser` / `password123`
+  - `/auth/register` エンドポイントで新規登録
+  - `/auth/token` エンドポイントでログイン
+  - `/auth/me` で認証情報取得
+  - Bearer トークン認証
+
+- **CORS設定済み**（React Vite フロントエンド連携対応）
+  - `localhost:5173`（Vite）からのアクセス許可済み
+
+- **TypeScript による型安全性**
+  - 開発体験の向上とバグ削減
 
 #### 3. Dev Containerで起動
 
@@ -79,9 +100,55 @@ cp -r examples/nodejs-postgres/* /path/to/your/project/
 
 #### 4. 動作確認
 
-- アプリケーション: http://localhost:3000
-- PostgreSQL: `localhost:5433`
-- Redis: `localhost:6379`
+**フロントエンド（React UI）:**
+- **React アプリケーション**: http://localhost:5173
+  - ログイン/新規登録UI
+  - ユーザー情報タブ
+  - アイテム管理タブ
+  - デフォルトユーザー: `testuser` / `password123`
+
+**バックエンド（Express）:**
+- **APIサーバー**: http://localhost:3000
+- **ヘルスチェック**: http://localhost:3000/health
+- **データベーステスト**: http://localhost:3000/db
+- **Redisテスト**: http://localhost:3000/redis
+
+**データベース:**
+- **PostgreSQL**: `localhost:5433`
+- **Redis**: `localhost:6379`
+
+#### 5. React UIでのログイン手順
+
+1. ブラウザで http://localhost:5173 を開く
+2. 「ログイン」タブを選択（デフォルト）
+3. デフォルトユーザーでログイン:
+   - **username**: `testuser`
+   - **password**: `password123`
+4. ログイン成功後、以下の機能が利用可能:
+   - **ユーザー情報タブ**: 現在のユーザー情報を表示
+   - **アイテム管理タブ**: アイテムの作成・一覧表示
+   - **ログアウト**: 右上のボタンでログアウト
+
+#### 6. フロントエンド・バックエンド統合の仕組み
+
+**アーキテクチャ:**
+```
+React (localhost:5173)
+  ↓ JWT トークン (localStorage)
+  ↓
+Express (localhost:3000)
+  ↓ Bearer トークン認証
+  ↓
+PostgreSQL (localhost:5433)
+Redis (localhost:6379)
+```
+
+**認証フロー:**
+1. ユーザーがReact UIでログイン
+2. Express `/auth/token` エンドポイントにPOST
+3. JWTトークンを取得し localStorage に保存
+4. 以降のAPI呼び出しで自動的に `Authorization: Bearer <token>` ヘッダーを付与
+5. トークンが無効（401）の場合、自動的にログイン画面にリダイレクト
 
 ---
 
@@ -314,6 +381,47 @@ Redis (localhost:6379)
 3. JWTトークンを取得し localStorage に保存
 4. 以降のAPI呼び出しで自動的に `Authorization: Bearer <token>` ヘッダーを付与
 5. トークンが無効（401）の場合、自動的にログイン画面にリダイレクト
+
+---
+
+## 🔐 全プロジェクト共通のJWT認証パターン
+
+3つのサンプルプロジェクト（Node.js, Flask, FastAPI）は全て同じJWT認証パターンを実装しています：
+
+### 共通の認証フロー
+
+1. **ユーザー登録** → `/auth/register` (Node.js, Flask) / 実装は別途 (FastAPI)
+2. **ログイン** → `/auth/token` (Node.js, Flask) / `/token` (FastAPI)
+3. **トークン取得** → JWTトークンをレスポンスで受け取り
+4. **トークン保存** → localStorage に保存（React UI）
+5. **認証API呼び出し** → `Authorization: Bearer <token>` ヘッダー付与
+6. **トークン検証** → サーバー側で署名検証
+7. **401エラー** → 自動的にログイン画面にリダイレクト
+
+### 共通のデフォルトユーザー
+
+全てのサンプルで以下のテストユーザーが利用可能：
+- **username**: `testuser`
+- **password**: `password123`
+
+### React UIの共通機能
+
+全プロジェクトで以下のReact UIコンポーネントを実装：
+- **Login.tsx**: ログイン/新規登録フォーム（タブ切り替え）
+- **UserList.tsx**: ユーザー情報表示
+- **ItemList.tsx**: アイテム管理（CRUD操作）
+- **api.ts**: JWT トークン管理、API クライアント
+
+### 言語・フレームワーク別の違い
+
+| 項目 | Node.js (Express) | Flask | FastAPI |
+|------|-------------------|-------|---------|
+| **JWTライブラリ** | jsonwebtoken | PyJWT | python-jose |
+| **パスワードハッシュ** | bcrypt | Flask-Bcrypt | passlib |
+| **認証エンドポイント** | `/auth/token` | `/auth/token` | `/token` |
+| **トークン形式** | JWT HS256 | JWT HS256 | JWT HS256 |
+| **有効期限** | 60分 | 60分 | 60分 |
+| **自動ドキュメント** | ❌ | ❌ | ✅ Swagger UI |
 
 ---
 

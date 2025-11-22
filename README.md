@@ -1,7 +1,7 @@
 # VSCode拡張機能で実現するDocker開発環境：開発から本番まで完全ガイド
 
 **このリポジトリには、本格的なデータベース統合を含む3つの実践サンプルが付属しています：**
-- 🟢 [Node.js + PostgreSQL + Redis](examples/nodejs-postgres/) - Express + React フルスタック開発
+- 🟢 [Node.js + PostgreSQL + Redis](examples/nodejs-postgres/) - Express + React フルスタック + JWT認証
 - 🔵 [FastAPI + React + PostgreSQL](examples/python-fastapi/) - FastAPI + React フルスタック + JWT認証（2025年推奨）
 - 🟡 [Flask + React + PostgreSQL](examples/python-flask/) - Flask + React フルスタック + JWT認証（学習向け）
 
@@ -1103,7 +1103,10 @@ Flaskは依然として価値がありますが、新規プロジェクトでは
 
 **完全に動作するNode.js + PostgreSQL + Redisのサンプルは [examples/nodejs-postgres/](examples/nodejs-postgres/) で提供しています。**
 - 📖 詳細ドキュメント: [examples/nodejs-postgres/README.md](examples/nodejs-postgres/README.md)
-- Express + TypeScript、PostgreSQL、Redis統合
+- **フルスタック構成**: Express + TypeScript + React 19 + Vite 6 + Tailwind CSS
+- **JWT認証**: ログイン/新規登録UI、トークン管理、認証ガード実装済み
+- **データベース**: PostgreSQL + Redis統合、リアルなCRUD操作
+- **デフォルトユーザー**: username=testuser, password=password123
 - 詳細なテスト手順とトラブルシューティング
 
 以下は、その構成を解説したものです。

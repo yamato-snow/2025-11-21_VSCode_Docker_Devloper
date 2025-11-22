@@ -12,14 +12,15 @@ This is an educational repository demonstrating VSCode + Docker development work
 **Repository Structure:**
 ```
 examples/
-├── nodejs-postgres/     # Node.js (Express + React) + PostgreSQL + Redis (fullstack)
-├── python-flask/        # Flask + PostgreSQL (backend API, learning-friendly)
+├── nodejs-postgres/     # Node.js (Express + React) + PostgreSQL + Redis (fullstack, JWT auth)
+├── python-flask/        # Flask + React + PostgreSQL (fullstack, JWT auth, learning-friendly)
 └── python-fastapi/      # FastAPI + React + PostgreSQL + Redis (fullstack, JWT auth, 2025 recommended)
 ```
 
 **All three examples include:**
 - Real PostgreSQL database integration (not mocks)
 - Complete CRUD operations with database models
+- JWT authentication with React UI (login/signup/logout)
 - Initialization scripts with test data
 - Comprehensive README with testing procedures
 - Dev Container configurations
@@ -41,6 +42,12 @@ All example projects use Dev Containers. Common workflow:
 **Location:** `examples/nodejs-postgres/`
 
 **Services:** app (port 3000, 5173), PostgreSQL (port 5433), Redis (port 6379)
+
+**Complete fullstack setup with:**
+- **Frontend**: React 19 + Vite 6 + Tailwind CSS + JWT authentication UI
+- **Backend**: Express + TypeScript + PostgreSQL + Redis
+- **Authentication**: JWT with login/signup UI fully integrated
+- **Production-ready**: Complete CRUD operations with real database
 
 ```bash
 # Development (auto-starts via devcontainer)
@@ -71,31 +78,57 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 - Initialization script: `init-db.js` (Node.js script, not psql command)
 - Default credentials: username=testuser, password=password123
 
+**JWT Authentication Implementation:**
+- jsonwebtoken (v9.0.2) for JWT token generation and verification
+- bcrypt (v5.1.1) for password hashing
+- Token expiration: 60 minutes (configurable via environment variable)
+- Authentication middleware: `authenticateToken()` for protected routes
+- Password requirements: Minimum 8 characters
+
+**JWT Authentication Endpoints:**
+```bash
+# Register new user
+curl -X POST "http://localhost:3000/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"newuser","email":"new@example.com","password":"password123"}'
+
+# Login (get token)
+curl -X POST "http://localhost:3000/auth/token" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"password123"}'
+
+# Get current user (requires Bearer token)
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:3000/auth/me
+```
+
 **API Endpoints:**
 ```bash
-# Health check
+# Health check (public)
 curl http://localhost:3000/health
 
-# Database connection test
+# Database connection test (public)
 curl http://localhost:3000/db
 
-# Redis connection test
+# Redis connection test (public)
 curl http://localhost:3000/redis
 
-# Users API
-curl http://localhost:3000/api/users
-curl -X POST http://localhost:3000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"username":"user1","email":"user1@example.com","password":"pass123"}'
+# Users API (protected - requires authentication)
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:3000/api/users
 
-# Items API
-curl http://localhost:3000/api/items
+# Items API (protected - requires authentication)
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:3000/api/items
+
 curl -X POST http://localhost:3000/api/items \
+  -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Item 1","description":"Description","price":99.99,"owner_id":1}'
+  -d '{"title":"Item 1","description":"Description","price":99.99}'
 
-# Frontend (React + Vite)
+# Frontend (React + Vite with JWT authentication UI)
 # Open browser: http://localhost:5173
+# Default login: username=testuser, password=password123
 ```
 
 ### Python Flask + React Example (Learning-Friendly)
