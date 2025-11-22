@@ -6,9 +6,9 @@
 
 ```
 examples/
-├── nodejs-postgres/      # Node.js (Next.js) + DB（フルスタック開発用）
-│   ├── .devcontainer/    # フロントエンド: Next.js
-│   │   ├── devcontainer.json  # バックエンド: PostgreSQL, Redis
+├── nodejs-postgres/      # Node.js (Express + React) + DB（フルスタック開発用）
+│   ├── .devcontainer/    # フロントエンド: React + Vite
+│   │   ├── devcontainer.json  # バックエンド: Express + PostgreSQL + Redis
 │   │   └── docker-compose.yml
 │   ├── Dockerfile
 │   ├── docker-compose.yml
@@ -38,11 +38,11 @@ examples/
 
 ## 🚀 使用方法
 
-### Node.js (Next.js) フルスタックプロジェクト
+### Node.js (Express + React) フルスタックプロジェクト
 
 **このサンプルは:**
-- Next.jsなどのNode.jsフロントエンド開発用
-- フルスタック構成（フロントエンド + データベース + キャッシュ）
+- React (Vite) + Express フルスタック開発用
+- フルスタック構成（フロントエンド + バックエンドAPI + データベース + キャッシュ）
 - PostgreSQL（データベース）とRedis（キャッシュ）を含む
 
 #### 1. プロジェクトのコピー
@@ -316,7 +316,7 @@ volumes:
 
 ## 🎯 本番環境へのデプロイ
 
-### Node.js (Next.js) フルスタックプロジェクトの場合
+### Node.js (Express + React) フルスタックプロジェクトの場合
 
 ```bash
 # 1. 本番用イメージのビルド

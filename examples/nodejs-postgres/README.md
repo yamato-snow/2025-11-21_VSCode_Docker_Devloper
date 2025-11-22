@@ -644,6 +644,21 @@ LOG_LEVEL=debug
 
 ## 🐛 トラブルシューティング
 
+### エラー: relation "users" does not exist
+
+**原因:** データベーステーブルが作成されていない（初期化未実行）
+
+**解決方法:**
+```bash
+# データベース初期化を実行
+npm run db:setup
+
+# または直接実行
+node init-db.js
+```
+
+**注意:** コンテナを再利用した場合、`postCreateCommand`は実行されません。手動で初期化が必要です。
+
 ### コンテナが起動しない
 
 ```bash
@@ -671,6 +686,9 @@ docker compose ps db
 
 # ログ確認
 docker compose logs db
+
+# DATABASE_URLが正しいか確認（db:5432 を使用）
+echo $DATABASE_URL
 ```
 
 ## 📚 参考リンク

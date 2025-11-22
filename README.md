@@ -1,7 +1,7 @@
 # VSCode拡張機能で実現するDocker開発環境：開発から本番まで完全ガイド
 
 **このリポジトリには、本格的なデータベース統合を含む3つの実践サンプルが付属しています：**
-- 🟢 [Node.js + PostgreSQL + Redis](examples/nodejs-postgres/) - フルスタックJavaScript開発
+- 🟢 [Node.js + PostgreSQL + Redis](examples/nodejs-postgres/) - Express + React フルスタック開発
 - 🔵 [FastAPI + PostgreSQL](examples/python-fastapi/) - モダンPythonバックエンド（2025年推奨）
 - 🟡 [Flask + PostgreSQL](examples/python-flask/) - シンプルなPythonバックエンド（学習向け）
 
@@ -647,7 +647,7 @@ VSCodeでDockerfileを開くと、以下の機能が自動的に有効になり�
 
 ### なぜこの比較が重要なのか
 
-Pythonバックエンド開発では、Flask と FastAPI が2大フレームワークとして君臨しています。本記事ではNode.js（Next.js）のサンプルに加えて、Pythonバックエンドのサンプルも提供していますが、**2025年時点でどちらを選ぶべきか**は重要な判断です。
+Pythonバックエンド開発では、Flask と FastAPI が2大フレームワークとして君臨しています。本記事ではNode.js（Express + React）のサンプルに加えて、Pythonバックエンドのサンプルも提供していますが、**2025年時点でどちらを選ぶべきか**は重要な判断です。
 
 ---
 
@@ -985,7 +985,7 @@ Python（特にFastAPI）は、2025年時点で**最もバランスの取れた�
 
 ---
 
-### Node.js（Next.js）フロントエンドとの連携
+### Node.js（React/Next.js）フロントエンドとの連携
 
 #### CORS設定（FastAPI）
 
@@ -1408,10 +1408,10 @@ npm test
 
 **このリポジトリでは、3つの本格的なサンプルプロジェクトを提供しています：**
 
-1. **Node.js + PostgreSQL + Redis**: フルスタックJavaScript開発
+1. **Node.js + PostgreSQL + Redis**: Express + React フルスタック開発
    - サンプルコード: [examples/nodejs-postgres/](examples/nodejs-postgres/)
    - 📖 詳細ドキュメント: [examples/nodejs-postgres/README.md](examples/nodejs-postgres/README.md)
-   - Express + TypeScript、PostgreSQL、Redis統合
+   - Express + TypeScript、React + Vite、PostgreSQL、Redis統合
    - リアルタイムデータベース接続テスト
 
 2. **FastAPI + PostgreSQL**: モダンPythonバックエンド（2025年推奨）

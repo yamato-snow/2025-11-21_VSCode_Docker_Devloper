@@ -12,7 +12,7 @@ This is an educational repository demonstrating VSCode + Docker development work
 **Repository Structure:**
 ```
 examples/
-├── nodejs-postgres/     # Node.js (Express) + PostgreSQL + Redis (fullstack JavaScript)
+├── nodejs-postgres/     # Node.js (Express + React) + PostgreSQL + Redis (fullstack)
 ├── python-flask/        # Flask + PostgreSQL (backend API, learning-friendly)
 └── python-fastapi/      # FastAPI + PostgreSQL + Redis (backend API, 2025 recommended)
 ```
