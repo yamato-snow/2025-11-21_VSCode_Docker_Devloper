@@ -10,6 +10,7 @@
  */
 
 const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
 
 // 環境変数から接続情報を取得
 const pool = new Pool({
@@ -72,13 +73,18 @@ async function initDatabase() {
     // 初期データ投入
     console.log('\n初期データを投入中...');
 
-    // テストユーザー作成（パスワードは "password123" のBase64エンコード版）
+    // テストユーザー作成（パスワードは "password123" のbcryptハッシュ）
+    console.log('パスワードハッシュを生成中...');
+    const saltRounds = 10;
+    const testPasswordHash = await bcrypt.hash('password123', saltRounds);
+    console.log('✅ パスワードハッシュ生成完了');
+
     await client.query(`
       INSERT INTO users (username, email, password_hash, is_active) VALUES
-        ('testuser', 'test@example.com', 'cGFzc3dvcmQxMjM=', TRUE),
-        ('admin', 'admin@example.com', 'cGFzc3dvcmQxMjM=', TRUE),
-        ('demo', 'demo@example.com', 'cGFzc3dvcmQxMjM=', TRUE)
-    `);
+        ($1, 'test@example.com', $2, TRUE),
+        ($3, 'admin@example.com', $4, TRUE),
+        ($5, 'demo@example.com', $6, TRUE)
+    `, ['testuser', testPasswordHash, 'admin', testPasswordHash, 'demo', testPasswordHash]);
 
     // サンプルアイテム作成
     await client.query(`

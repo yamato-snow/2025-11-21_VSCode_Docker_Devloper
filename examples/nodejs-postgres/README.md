@@ -1,6 +1,15 @@
-# Node.js + PostgreSQL + Redis + React Fullstack Dev Container Example
+# Node.js + PostgreSQL + Redis + React Fullstack Dev Container Example with JWT Authentication
 
-このディレクトリには、VSCode Dev Containersで動作するNode.js + PostgreSQL + Redis + Reactのフルスタック開発環境サンプルが含まれています。
+このディレクトリには、VSCode Dev Containersで動作するNode.js + PostgreSQL + Redis + Reactの**JWT認証付き**フルスタック開発環境サンプルが含まれています。
+
+## ✨ 主な特徴
+
+- **JWT認証**: JSON Web Tokenによるセキュアな認証システム
+- **フルスタック**: Express (Node.js) + React 19 + PostgreSQL + Redis
+- **bcrypt**: 産業標準のパスワードハッシュ化
+- **保護されたAPI**: すべてのAPI エンドポイントがJWT認証で保護
+- **認証UI**: ログイン/新規登録フォーム付きReactアプリケーション
+- **トークン管理**: localStorage による永続的なセッション管理
 
 ## 📁 構成
 
@@ -14,11 +23,12 @@ nodejs-postgres/
 ├── client/                 # フロントエンドソースコード
 │   ├── src/
 │   │   ├── components/     # Reactコンポーネント
+│   │   │   ├── Login.tsx   # ログイン/新規登録フォーム
 │   │   │   ├── UserList.tsx
 │   │   │   └── ItemList.tsx
-│   │   ├── App.tsx         # メインアプリケーション
+│   │   ├── App.tsx         # メインアプリケーション（JWT認証ガード付き）
 │   │   ├── main.tsx        # エントリーポイント
-│   │   ├── api.ts          # API クライアント
+│   │   ├── api.ts          # API クライアント（JWT トークン管理）
 │   │   └── index.css       # スタイル（Tailwind CSS）
 │   ├── index.html          # HTMLテンプレート
 │   ├── vite.config.ts      # Vite設定（Docker対応）
@@ -92,8 +102,17 @@ http://localhost:5173
 ```
 
 フロントエンドアプリケーションが表示され、以下の機能が使用できます:
-- **ユーザー管理**: ユーザー一覧表示、新規ユーザー作成
+
+**1. ログイン/新規登録画面**
+- **デフォルトユーザー**: username=`testuser`, password=`password123`
+- 新規登録機能（8文字以上のパスワード必須）
+- JWT トークンの自動保存とセッション管理
+
+**2. 認証後の機能（ログイン必須）**
+- **ユーザー管理**: ユーザー一覧表示
 - **アイテム管理**: アイテム一覧表示、新規アイテム作成
+- **ユーザープロフィール**: ヘッダーに現在のユーザー情報表示
+- **ログアウト**: トークンの削除とログイン画面へ遷移
 
 #### バックエンドAPI
 
@@ -243,21 +262,17 @@ PONG
 
 ## 🌐 API エンドポイント
 
-このアプリケーションは、FlaskやFastAPIサンプルと同様のREST APIを提供します。
+このアプリケーションは、FlaskやFastAPIサンプルと同様のREST APIを提供します。**すべてのAPI エンドポイント（/api/*）はJWT認証が必須です。**
 
-### ユーザー管理API
+### 🔐 認証API（公開エンドポイント）
 
 | メソッド | エンドポイント | 説明 |
 |---------|--------------|------|
-| GET | `/api/users` | ユーザー一覧取得（ページネーション対応） |
-| POST | `/api/users` | 新規ユーザー作成 |
-| GET | `/api/users/:id` | ユーザー詳細取得 |
+| POST | `/auth/register` | 新規ユーザー登録（JWT トークン自動発行） |
+| POST | `/auth/token` | ログイン（JWT トークン発行） |
+| GET | `/auth/me` | 現在のユーザー情報取得（**要認証**） |
 
-**クエリパラメータ（GET /api/users）:**
-- `page`: ページ番号（デフォルト: 1）
-- `per_page`: 1ページあたりの件数（デフォルト: 10）
-
-**リクエストボディ（POST /api/users）:**
+**リクエストボディ（POST /auth/register）:**
 ```json
 {
   "username": "newuser",
@@ -266,13 +281,51 @@ PONG
 }
 ```
 
-### アイテム管理API
+**リクエストボディ（POST /auth/token）:**
+```json
+{
+  "username": "testuser",
+  "password": "password123"
+}
+```
+
+**レスポンス（POST /auth/register, POST /auth/token）:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "user": {
+    "id": 1,
+    "username": "testuser",
+    "email": "test@example.com",
+    "is_active": true
+  }
+}
+```
+
+### 🔒 ユーザー管理API（要認証）
 
 | メソッド | エンドポイント | 説明 |
 |---------|--------------|------|
-| GET | `/api/items` | アイテム一覧取得（ページネーション対応） |
-| POST | `/api/items` | 新規アイテム作成 |
-| GET | `/api/items/:id` | アイテム詳細取得 |
+| GET | `/api/users` | ユーザー一覧取得（ページネーション対応）**要JWT** |
+| GET | `/api/users/:id` | ユーザー詳細取得 **要JWT** |
+
+**クエリパラメータ（GET /api/users）:**
+- `page`: ページ番号（デフォルト: 1）
+- `per_page`: 1ページあたりの件数（デフォルト: 10）
+
+**認証ヘッダー（必須）:**
+```
+Authorization: Bearer <your_jwt_token>
+```
+
+### 🔒 アイテム管理API（要認証）
+
+| メソッド | エンドポイント | 説明 |
+|---------|--------------|------|
+| GET | `/api/items` | アイテム一覧取得（ページネーション対応）**要JWT** |
+| POST | `/api/items` | 新規アイテム作成 **要JWT** |
+| GET | `/api/items/:id` | アイテム詳細取得 **要JWT** |
 
 **リクエストボディ（POST /api/items）:**
 ```json
@@ -296,6 +349,112 @@ PONG
 ## 🧪 詳細なテスト方法
 
 このセクションでは、各エンドポイントの詳細なテスト方法と期待される出力を説明します。
+
+### 🔐 JWT認証のテスト
+
+#### 1. 新規ユーザー登録
+
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser2",
+    "email": "test2@example.com",
+    "password": "password123"
+  }'
+```
+
+**期待される出力:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "user": {
+    "id": 4,
+    "username": "testuser2",
+    "email": "test2@example.com",
+    "is_active": true
+  }
+}
+```
+
+#### 2. ログイン（トークン取得）
+
+```bash
+curl -X POST http://localhost:3000/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "password": "password123"
+  }'
+```
+
+**期待される出力:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "user": {
+    "id": 1,
+    "username": "testuser",
+    "email": "test@example.com",
+    "is_active": true
+  }
+}
+```
+
+**重要:** 返ってきた `access_token` の値を保存してください。以降のAPI リクエストで使用します。
+
+#### 3. 現在のユーザー情報取得（認証テスト）
+
+```bash
+# トークンを環境変数に保存（上記のログインで取得したトークンを使用）
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+# 認証付きリクエスト
+curl http://localhost:3000/auth/me \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**期待される出力:**
+```json
+{
+  "id": 1,
+  "username": "testuser",
+  "email": "test@example.com",
+  "is_active": true
+}
+```
+
+#### 4. 認証なしでアクセス（エラーテスト）
+
+```bash
+# トークンなしでprotectedエンドポイントにアクセス
+curl http://localhost:3000/api/users
+```
+
+**期待される出力:**
+```json
+{
+  "error": "Access token required"
+}
+```
+
+#### 5. 無効なトークンでアクセス（エラーテスト）
+
+```bash
+curl http://localhost:3000/api/users \
+  -H "Authorization: Bearer invalid_token_here"
+```
+
+**期待される出力:**
+```json
+{
+  "error": "Invalid or expired token"
+}
+```
+
+### システムエンドポイントのテスト
 
 ### 1. ウェルカムエンドポイント
 
@@ -471,25 +630,24 @@ docker compose logs db -f
 docker compose logs redis -f
 ```
 
-### 8. ユーザーAPI テスト
+### 8. ユーザーAPI テスト（JWT認証必須）
 
-データベースの初期データを使ってユーザーAPIをテストします。
+データベースの初期データを使ってユーザーAPIをテストします。**JWT トークンが必要です。**
 
 ```bash
-# ユーザー一覧取得
-curl http://localhost:3000/api/users
-
-# 特定のユーザー取得
-curl http://localhost:3000/api/users/1
-
-# 新規ユーザー作成
-curl -X POST http://localhost:3000/api/users \
+# 事前準備: トークンを取得して環境変数に保存
+export TOKEN=$(curl -s -X POST http://localhost:3000/auth/token \
   -H "Content-Type: application/json" \
-  -d '{
-    "username": "testuser2",
-    "email": "test2@example.com",
-    "password": "password123"
-  }'
+  -d '{"username":"testuser","password":"password123"}' \
+  | jq -r '.access_token')
+
+# ユーザー一覧取得（JWT認証付き）
+curl http://localhost:3000/api/users \
+  -H "Authorization: Bearer $TOKEN"
+
+# 特定のユーザー取得（JWT認証付き）
+curl http://localhost:3000/api/users/1 \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 **期待される出力（ユーザー一覧）:**
@@ -510,20 +668,29 @@ curl -X POST http://localhost:3000/api/users \
 }
 ```
 
-### 9. アイテムAPI テスト
+### 9. アイテムAPI テスト（JWT認証必須）
 
-データベースの初期データを使ってアイテムAPIをテストします。
+データベースの初期データを使ってアイテムAPIをテストします。**JWT トークンが必要です。**
 
 ```bash
-# アイテム一覧取得
-curl http://localhost:3000/api/items
+# 事前準備: トークンを取得（まだ取得していない場合）
+export TOKEN=$(curl -s -X POST http://localhost:3000/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"password123"}' \
+  | jq -r '.access_token')
 
-# 特定のアイテム取得
-curl http://localhost:3000/api/items/1
+# アイテム一覧取得（JWT認証付き）
+curl http://localhost:3000/api/items \
+  -H "Authorization: Bearer $TOKEN"
 
-# 新規アイテム作成
+# 特定のアイテム取得（JWT認証付き）
+curl http://localhost:3000/api/items/1 \
+  -H "Authorization: Bearer $TOKEN"
+
+# 新規アイテム作成（JWT認証付き）
 curl -X POST http://localhost:3000/api/items \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "title": "New Product",
     "description": "A new product description",

@@ -1,11 +1,17 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { Pool } from 'pg';
 import { createClient } from 'redis';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 
 // 環境変数読み込み
 dotenv.config();
+
+// JWT設定
+const SECRET_KEY = process.env.SECRET_KEY || 'dev_secret_key_change_in_production';
+const ACCESS_TOKEN_EXPIRE_MINUTES = parseInt(process.env.ACCESS_TOKEN_EXPIRE_MINUTES || '60');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,20 +53,101 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // ==========================================
+// 型定義
+// ==========================================
+interface JwtPayload {
+  sub: string;  // username
+  exp: number;
+}
+
+interface AuthRequest extends Request {
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+    is_active: boolean;
+  };
+}
+
+// ==========================================
+// JWT認証ミドルウェア
+// ==========================================
+async function authenticateToken(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload;
+    const username = decoded.sub;
+
+    // ユーザー情報を取得
+    const result = await pgPool.query(
+      'SELECT id, username, email, is_active FROM users WHERE username = $1',
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    if (!user.is_active) {
+      return res.status(401).json({ error: 'Inactive user' });
+    }
+
+    // リクエストにユーザー情報を追加
+    (req as AuthRequest).user = user;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
+
+// ==========================================
+// ユーティリティ関数
+// ==========================================
+async function hashPassword(password: string): Promise<string> {
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return await bcrypt.compare(password, hash);
+}
+
+function createAccessToken(username: string): string {
+  const expiresIn = ACCESS_TOKEN_EXPIRE_MINUTES * 60; // seconds
+  return jwt.sign(
+    { sub: username },
+    SECRET_KEY,
+    { expiresIn }
+  );
+}
+
+// ==========================================
 // ルート
 // ==========================================
 
 // ウェルカムエンドポイント
 app.get('/', (req: Request, res: Response) => {
   res.json({
-    message: 'Welcome to Node.js + PostgreSQL + Redis + React Fullstack!',
+    message: 'Welcome to Node.js + PostgreSQL + Redis + React Fullstack with JWT Authentication!',
     endpoints: {
       health: '/health',
       database: '/db',
       redis: '/redis',
+      auth: {
+        register: 'POST /auth/register',
+        login: 'POST /auth/token',
+        me: 'GET /auth/me (protected)'
+      },
       api: {
-        users: '/api/users',
-        items: '/api/items'
+        users: '/api/users (protected)',
+        items: '/api/items (protected)'
       }
     },
     environment: process.env.NODE_ENV || 'development',
@@ -124,11 +211,152 @@ app.get('/redis', async (req: Request, res: Response) => {
 });
 
 // ==========================================
+// 認証エンドポイント
+// ==========================================
+
+// POST /auth/register - ユーザー登録
+app.post('/auth/register', async (req: Request, res: Response) => {
+  try {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        error: 'Username, email, and password are required',
+      });
+    }
+
+    // パスワードの長さチェック
+    if (password.length < 8) {
+      return res.status(400).json({
+        error: 'Password must be at least 8 characters long',
+      });
+    }
+
+    // 重複チェック
+    const existingUser = await pgPool.query(
+      'SELECT id FROM users WHERE username = $1 OR email = $2',
+      [username, email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({
+        error: 'Username or email already exists',
+      });
+    }
+
+    // パスワードハッシュ化（bcrypt）
+    const passwordHash = await hashPassword(password);
+
+    const result = await pgPool.query(
+      'INSERT INTO users (username, email, password_hash, is_active, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id, username, email, is_active, created_at',
+      [username, email, passwordHash, true]
+    );
+
+    const user = result.rows[0];
+
+    // トークン生成
+    const accessToken = createAccessToken(username);
+
+    res.status(201).json({
+      access_token: accessToken,
+      token_type: 'bearer',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        is_active: user.is_active,
+      },
+    });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to register user',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// POST /auth/token - ログイン（トークン取得）
+app.post('/auth/token', async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        error: 'Username and password are required',
+      });
+    }
+
+    // ユーザー検証
+    const result = await pgPool.query(
+      'SELECT id, username, email, password_hash, is_active FROM users WHERE username = $1',
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        error: 'Incorrect username or password',
+      });
+    }
+
+    const user = result.rows[0];
+
+    // パスワード検証
+    const isValidPassword = await verifyPassword(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        error: 'Incorrect username or password',
+      });
+    }
+
+    // アクティブユーザーチェック
+    if (!user.is_active) {
+      return res.status(401).json({
+        error: 'User account is inactive',
+      });
+    }
+
+    // トークン生成
+    const accessToken = createAccessToken(username);
+
+    res.json({
+      access_token: accessToken,
+      token_type: 'bearer',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        is_active: user.is_active,
+      },
+    });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to login',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// GET /auth/me - 現在のユーザー情報取得（保護されたルート）
+app.get('/auth/me', authenticateToken, (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  res.json({
+    id: authReq.user?.id,
+    username: authReq.user?.username,
+    email: authReq.user?.email,
+    is_active: authReq.user?.is_active,
+  });
+});
+
+// ==========================================
 // API エンドポイント
 // ==========================================
 
-// GET /api/users - ユーザー一覧
-app.get('/api/users', async (req: Request, res: Response) => {
+// GET /api/users - ユーザー一覧（保護されたルート）
+app.get('/api/users', authenticateToken, async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const perPage = parseInt(req.query.per_page as string) || 10;
@@ -158,53 +386,8 @@ app.get('/api/users', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/users - ユーザー作成
-app.post('/api/users', async (req: Request, res: Response) => {
-  try {
-    const { username, email, password } = req.body;
-
-    if (!username || !email || !password) {
-      return res.status(400).json({
-        error: 'Username, email, and password are required',
-      });
-    }
-
-    // 重複チェック
-    const existingUser = await pgPool.query(
-      'SELECT id FROM users WHERE username = $1 OR email = $2',
-      [username, email]
-    );
-
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({
-        error: 'Username or email already exists',
-      });
-    }
-
-    // パスワードハッシュ化（簡易版 - 本番環境ではbcryptを使用）
-    const passwordHash = Buffer.from(password).toString('base64');
-
-    const result = await pgPool.query(
-      'INSERT INTO users (username, email, password_hash, is_active, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id, username, email, is_active, created_at',
-      [username, email, passwordHash, true]
-    );
-
-    res.status(201).json({
-      message: 'User created successfully',
-      user: result.rows[0],
-    });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to create user',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
-
-// GET /api/users/:id - ユーザー詳細
-app.get('/api/users/:id', async (req: Request, res: Response) => {
+// GET /api/users/:id - ユーザー詳細（保護されたルート）
+app.get('/api/users/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     const result = await pgPool.query(
@@ -227,8 +410,8 @@ app.get('/api/users/:id', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/items - アイテム一覧
-app.get('/api/items', async (req: Request, res: Response) => {
+// GET /api/items - アイテム一覧（保護されたルート）
+app.get('/api/items', authenticateToken, async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const perPage = parseInt(req.query.per_page as string) || 10;
@@ -258,8 +441,8 @@ app.get('/api/items', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/items - アイテム作成
-app.post('/api/items', async (req: Request, res: Response) => {
+// POST /api/items - アイテム作成（保護されたルート）
+app.post('/api/items', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { title, description, price, owner_id } = req.body;
 
@@ -298,8 +481,8 @@ app.post('/api/items', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/items/:id - アイテム詳細
-app.get('/api/items/:id', async (req: Request, res: Response) => {
+// GET /api/items/:id - アイテム詳細（保護されたルート）
+app.get('/api/items/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const itemId = parseInt(req.params.id);
     const result = await pgPool.query(
