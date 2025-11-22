@@ -10,7 +10,7 @@ FROM python:3.11-slim AS development
 
 WORKDIR /workspace
 
-# 開発ツールのインストール
+# 開発ツールのインストール（curl を含む）
 RUN apt-get update && apt-get install -y \
     git \
     vim \
@@ -19,17 +19,28 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
+# Node.js 20.x のインストール（React フロントエンド用）
+# ↑ この時点で curl は既にインストール済み
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
 # 依存関係ファイルのコピー
 COPY requirements.txt requirements-dev.txt ./
 
 # 開発用依存関係を含めてインストール
 RUN pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
 
+# package.json のコピー（存在する場合）
+COPY package*.json ./
+
+# npm 依存関係のインストール（Dev Containers の場合は postCreateCommand で再実行）
+RUN npm install || echo "npm install will be run in postCreateCommand"
+
 # ソースコードのコピー
 COPY . .
 
 # 開発用ポート
-EXPOSE 8000
+EXPOSE 8000 5173
 
 # FastAPI開発サーバー起動（ホットリロード有効）
 CMD ["fastapi", "dev", "main.py", "--host", "0.0.0.0", "--port", "8000"]

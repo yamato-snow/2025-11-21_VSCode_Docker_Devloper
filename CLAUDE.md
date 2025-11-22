@@ -409,6 +409,26 @@ Standardized across examples:
 
 ## Troubleshooting Common Issues
 
+### Dockerfile build errors (python-fastapi)
+
+**Error:** `curl: not found` during Node.js installation in python-fastapi example
+
+**Cause:** In Dockerfile, attempting to use `curl` before it's installed
+
+**Solution:** Ensure correct RUN command order in Dockerfile:
+```dockerfile
+# ✅ Correct: Install curl first
+RUN apt-get update && apt-get install -y \
+    git vim curl postgresql-client gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Then use curl to install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+```
+
+After fixing, rebuild: F1 → "Dev Containers: Rebuild Container"
+
 ### Container won't start
 ```bash
 # Check Docker Desktop is running

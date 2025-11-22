@@ -16,6 +16,7 @@ services:
 
     ports:
       - "8000:8000"
+      - "5173:5173"
 
     environment:
       # アプリケーション設定
@@ -33,8 +34,8 @@ services:
       - SECRET_KEY=dev_secret_key_change_in_production
       - ACCESS_TOKEN_EXPIRE_MINUTES=60
 
-      # CORS設定（Next.jsフロントエンド連携用）
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+      # CORS設定（React Vite フロントエンド連携用）
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:3001
 
     depends_on:
       db:
@@ -42,8 +43,8 @@ services:
       redis:
         condition: service_started
 
-    # 開発サーバー起動（ホットリロード有効）
-    command: fastapi dev main.py --host 0.0.0.0 --port 8000
+    # 開発サーバー起動（FastAPI + Vite 両方を自動起動）
+    command: sh -c "npm run dev & fastapi dev main.py --host 0.0.0.0 --port 8000"
 
   # ==========================================
   # PostgreSQLデータベース

@@ -1,17 +1,26 @@
-# FastAPI + PostgreSQL + Redis Dev Container Example
+# FastAPI + React + PostgreSQL + Redis Fullstack Dev Container Example
 
-このディレクトリには、VSCode Dev Containersで動作するFastAPI + PostgreSQL + Redisのモダンバックエンド開発環境サンプルが含まれています。
+このディレクトリには、VSCode Dev Containersで動作するFastAPI + React + PostgreSQL + Redisのモダンフルスタック開発環境サンプルが含まれています。
 
 ## 🌟 特徴
 
+### バックエンド（FastAPI）
 - **FastAPI**: 高速・モダンなPython Webフレームワーク（ASGI）
 - **PostgreSQL**: 本番環境対応のリレーショナルデータベース
 - **SQLAlchemy 2.0**: 非同期ORM（asyncpg使用）
 - **JWT認証**: トークンベースの認証システム
 - **Pydantic V2**: データバリデーションとシリアライゼーション
 - **自動APIドキュメント**: Swagger UI & ReDoc
-- **CORS設定**: Next.jsフロントエンド連携対応
+- **CORS設定**: React Vite フロントエンド連携対応
 - **Redis**: キャッシュ・セッション管理用（構成済みだが未実装）
+
+### フロントエンド（React）
+- **React 19**: 最新のReactフレームワーク
+- **Vite 6**: 超高速ビルドツール
+- **TypeScript**: 型安全な開発環境
+- **Tailwind CSS**: ユーティリティファーストCSS
+- **JWT認証UI**: ログイン/新規登録フォーム
+- **認証ガード**: トークンベースのルーティング保護
 
 ## 📁 プロジェクト構造
 
@@ -20,11 +29,26 @@ python-fastapi/
 ├── .devcontainer/          # Dev Container設定
 │   ├── devcontainer.json   # VSCode Dev Container設定
 │   └── docker-compose.yml  # 開発環境用Docker Compose
+├── client/                 # Reactフロントエンド
+│   ├── src/
+│   │   ├── components/     # Reactコンポーネント
+│   │   │   ├── Login.tsx   # ログイン/新規登録UI
+│   │   │   ├── UserList.tsx # ユーザー情報表示
+│   │   │   └── ItemList.tsx # アイテム管理
+│   │   ├── App.tsx         # メインアプリケーション
+│   │   ├── api.ts          # API クライアント（JWT認証付き）
+│   │   ├── main.tsx        # エントリポイント
+│   │   └── index.css       # Tailwind CSS
+│   ├── vite.config.ts      # Vite設定
+│   ├── tsconfig.json       # TypeScript設定
+│   └── index.html          # HTMLテンプレート
 ├── main.py                 # FastAPIアプリケーション本体
 ├── database.py             # SQLAlchemy接続設定（非同期）
 ├── models.py               # データベースモデル定義（User, Item）
 ├── crud.py                 # CRUD操作（Create, Read, Update, Delete）
 ├── init_db.py              # データベース初期化スクリプト
+├── package.json            # npm依存パッケージ
+├── tailwind.config.js      # Tailwind CSS設定
 ├── requirements.txt        # Python依存パッケージ
 ├── Dockerfile              # Multi-stage Dockerfile
 ├── docker-compose.yml      # 本番環境用Docker Compose
@@ -116,14 +140,58 @@ Swagger UI でテスト:
 
 ### 4. 開発サーバー起動
 
-データベース初期化後、開発サーバーを起動:
+データベース初期化後、バックエンドとフロントエンドの開発サーバーを起動します。
+
+#### バックエンド（FastAPI）
 
 ```bash
 # Dev Containerでは自動起動されますが、手動起動する場合:
+fastapi dev main.py --host 0.0.0.0 --port 8000
+
+# または uvicorn を直接使用:
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 5. 動作確認
+バックエンドは **http://localhost:8000** で起動します。
+
+#### フロントエンド（React + Vite）
+
+**新しいターミナルを開いて**以下を実行:
+
+```bash
+npm run dev
+```
+
+フロントエンドは **http://localhost:5173** で起動します。
+
+**📝 重要:** バックエンドとフロントエンドは**両方同時に起動**する必要があります。フロントエンドはバックエンドAPIを呼び出すため、両方が起動している状態で動作します。
+
+### 5. フロントエンド（React UI）での動作確認
+
+ブラウザで **http://localhost:5173** にアクセスすると、ログイン画面が表示されます。
+
+#### ログイン手順
+
+1. ブラウザで http://localhost:5173 を開く
+2. 「ログイン」タブを選択（デフォルト）
+3. 以下のデフォルトユーザー情報でログイン:
+   - **username**: `testuser`
+   - **password**: `password123`
+4. ログイン成功後、ユーザー情報とアイテム管理画面が表示されます
+
+#### 新規ユーザー登録
+
+1. 「新規登録」タブに切り替え
+2. ユーザー名、メールアドレス、パスワード（8文字以上）を入力
+3. 登録完了後、自動的にログインされます
+
+#### UI機能
+
+- **ユーザー情報タブ**: 現在のログインユーザーの情報を表示
+- **アイテム管理タブ**: アイテムの作成・一覧表示
+- **ログアウト**: 右上のボタンでログアウト（トークンが削除されます）
+
+### 6. バックエンドAPI（Swagger UI）での動作確認
 
 ブラウザまたはcurlで以下のエンドポイントにアクセス:
 
@@ -145,21 +213,41 @@ curl http://localhost:8000/health
 
 ## 📋 利用可能なコマンド
 
+### バックエンド（FastAPI）
+
 | コマンド | 説明 |
 |---------|------|
 | `uvicorn main:app --reload` | 開発サーバー起動（ホットリロード） |
+| `fastapi dev main.py` | FastAPI CLI使用（2025年推奨） |
 | `python init_db.py` | データベース初期化（テーブル作成＋初期データ） |
 | `ruff check .` | コードチェック（Ruff linter） |
 | `ruff format .` | コードフォーマット |
 
+### フロントエンド（React）
+
+| コマンド | 説明 |
+|---------|------|
+| `npm run dev` | Vite開発サーバー起動（ポート5173） |
+| `npm run build` | 本番用ビルド |
+| `npm run preview` | ビルド後のプレビュー |
+
 ## 🔌 サービス構成
 
-### アプリケーション (api)
+### フロントエンド (React + Vite)
+- **ポート**: 5173
+- **フレームワーク**: React 19 + Vite 6
+- **スタイリング**: Tailwind CSS
+- **型安全性**: TypeScript
+- **認証**: JWT トークン（localStorage保存）
+- **APIプロキシ**: `/api` → `http://localhost:8000`
+
+### バックエンド (api)
 - **ポート**: 8000
 - **フレームワーク**: FastAPI + Uvicorn（ASGI）
 - **ORM**: SQLAlchemy 2.0 + asyncpg
 - **認証**: JWT（JSON Web Token）
 - **バリデーション**: Pydantic V2
+- **CORS**: React Vite (port 5173) 対応
 
 ### PostgreSQL (db)
 - **ポート**: 5433 (ホストからアクセス) / 5432 (コンテナ間通信)
@@ -177,23 +265,44 @@ curl http://localhost:8000/health
 
 Dev Container内に以下のツールが自動インストールされます:
 
+### バックエンド（Python）
 - **Python 3.11**
 - **FastAPI, Uvicorn, SQLAlchemy, asyncpg**
 - **JWT, Passlib, bcrypt**
 - **Ruff** (2025年推奨のモダンlinter/formatter)
 - **PostgreSQL Client** (psql)
+
+### フロントエンド（Node.js）
+- **Node.js 20.x**
+- **npm** (パッケージマネージャー)
+- **React 19, Vite 6, TypeScript**
+- **Tailwind CSS**
+
+### 共通ツール
 - **Git, Vim, Curl, Wget**
 - **GitHub CLI** (gh)
+- **Docker** (Docker-in-Docker)
 
 ### VSCode拡張機能
 
 以下の拡張機能がコンテナ内に自動インストールされます:
 
+#### Python開発
 - Python
 - Pylance
 - Ruff (linter & formatter)
-- Docker
+- Black (formatter)
+
+#### React/TypeScript開発
+- ESLint
+- Prettier
+- Tailwind CSS IntelliSense
+- ES7+ React/Redux/React-Native snippets
+
+#### データベース・その他
 - SQLTools (PostgreSQL接続)
+- Docker
+- REST Client (API テスト)
 
 ## 🧪 詳細なテスト方法
 
@@ -524,31 +633,56 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 ## 🌐 CORS設定（フロントエンド連携）
 
-Next.jsなどのフロントエンドと連携する場合、CORSが設定済みです。
+React Vite フロントエンドとの連携用にCORSが設定済みです。
 
 **デフォルト設定:**
 ```python
-CORS_ORIGINS = ["http://localhost:3000", "http://localhost:3001"]
+CORS_ORIGINS = [
+  "http://localhost:5173",  # Vite開発サーバー
+  "http://localhost:3000",  # Next.js (オプション)
+  "http://localhost:3001"   # Next.js (オプション)
+]
 ```
 
 **環境変数で変更:**
 ```bash
 # .env ファイル
-CORS_ORIGINS=http://localhost:3000,http://myapp.local:3000
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 ```
 
-### フロントエンド連携の例（Next.js）
+**docker-compose.yml の設定:**
+```yaml
+environment:
+  - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:3001
+```
 
-```javascript
-// Next.js API呼び出し例
-const response = await fetch('http://localhost:8000/items', {
-  method: 'GET',
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  },
-});
-const items = await response.json();
+### フロントエンド連携の仕組み
+
+React フロントエンド（[client/src/api.ts](client/src/api.ts)）は以下の方法でバックエンドと通信します:
+
+1. **Vite プロキシ設定**: `/api/*` リクエストを `http://localhost:8000` にプロキシ
+2. **JWT トークン管理**: localStorage にトークンを保存し、自動的にリクエストヘッダーに付与
+3. **認証ガード**: トークンがない場合はログイン画面にリダイレクト
+
+```typescript
+// client/src/api.ts の実装例
+async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = getToken();
+  const headers: HeadersInit = { ...options.headers };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { ...options, headers });
+
+  if (response.status === 401) {
+    removeToken();
+    throw new Error('Authentication failed. Please login again.');
+  }
+
+  return response;
+}
 ```
 
 ## 📝 環境変数
@@ -602,6 +736,34 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 ```
 
 ## 🐛 トラブルシューティング
+
+### Dev Container ビルドエラー「curl: not found」
+
+**症状:** Dev Container のビルド中に以下のエラーが発生:
+```
+> [api development 3/9] RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+0.159 /bin/sh: 1: curl: not found
+```
+
+**原因:** Dockerfile 内で、`curl` コマンドがインストールされる前に Node.js のインストールに使用しようとしている
+
+**解決方法:**
+
+[Dockerfile](Dockerfile:13-25) の RUN コマンドの順序が正しいことを確認してください:
+
+```dockerfile
+# ✅ 正しい順序: 先に curl をインストール
+RUN apt-get update && apt-get install -y \
+    git vim curl postgresql-client gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# その後 curl を使用して Node.js をインストール
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+```
+
+修正後、コンテナを再ビルド:
+- **F1** → `Dev Containers: Rebuild Container`
 
 ### 「Internal Server Error」が発生
 

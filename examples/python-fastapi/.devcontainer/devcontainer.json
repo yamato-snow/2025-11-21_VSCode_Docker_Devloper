@@ -7,10 +7,14 @@
   "workspaceFolder": "/workspace",
 
   // ポート転送
-  "forwardPorts": [8000, 5433, 6379],
+  "forwardPorts": [8000, 5173, 5433, 6379],
   "portsAttributes": {
     "8000": {
       "label": "FastAPI Server",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Vite Frontend",
       "onAutoForward": "notify"
     },
     "5433": {
@@ -43,6 +47,12 @@
         "ms-python.black-formatter",
         "charliermarsh.ruff",
 
+        // React/TypeScript 開発
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "dsznajder.es7-react-js-snippets",
+
         // データベース
         "mtxr.sqltools",
         "mtxr.sqltools-driver-pg",
@@ -67,7 +77,7 @@
 
         // Ruff（新世代linter - 2025年推奨）
         "ruff.enable": true,
-        "ruff.lint.run": "onSave",
+        "ruff.nativeServer": true,
 
         // Black（フォーマッター）
         "python.formatting.provider": "black",
@@ -75,7 +85,8 @@
         "[python]": {
           "editor.defaultFormatter": "ms-python.black-formatter",
           "editor.codeActionsOnSave": {
-            "source.organizeImports": "explicit"
+            "source.organizeImports": "explicit",
+            "source.fixAll.ruff": "explicit"
           }
         },
 
@@ -102,20 +113,35 @@
           }
         ],
 
+        // TypeScript/React 設定
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "tailwindCSS.experimental.classRegex": [
+          ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+          ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+        ],
+
         // ファイル設定
         "files.exclude": {
           "**/__pycache__": true,
           "**/.pytest_cache": true,
           "**/.mypy_cache": true,
-          "**/.ruff_cache": true
+          "**/.ruff_cache": true,
+          "**/node_modules": true
         }
       }
     }
   },
 
   // ライフサイクルコマンド
-  "postCreateCommand": "pip install -r requirements.txt -r requirements-dev.txt",
-  "postStartCommand": "echo '✅ FastAPI Dev Container is ready! Visit http://localhost:8000/docs for Swagger UI'",
+  "postCreateCommand": "pip install -r requirements.txt -r requirements-dev.txt && npm install",
+  "postStartCommand": "echo '✅ FastAPI + React Dev Container is ready!\n📚 Swagger UI: http://localhost:8000/docs\n⚛️  React App: http://localhost:5173'",
 
   // コンテナ内の実行ユーザー
   "remoteUser": "root",
