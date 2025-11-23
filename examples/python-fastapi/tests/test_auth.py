@@ -23,12 +23,19 @@ class TestUserRegistration:
 
         assert response.status_code == 201
         data = response.json()
-        assert data["username"] == test_user_data["username"]
-        assert data["email"] == test_user_data["email"]
-        assert data["is_active"] is True
-        assert "id" in data
-        assert "hashed_password" not in data  # Password should not be in response
+
+        # Registration response includes access_token, token_type, and user
         assert "access_token" in data  # Registration returns token
+        assert data["token_type"] == "bearer"
+        assert "user" in data
+
+        # Verify user information
+        user = data["user"]
+        assert user["username"] == test_user_data["username"]
+        assert user["email"] == test_user_data["email"]
+        assert user["is_active"] is True
+        assert "id" in user
+        assert "hashed_password" not in user  # Password should not be in response
 
     async def test_register_duplicate_username(
         self, client: AsyncClient, test_user_data: dict

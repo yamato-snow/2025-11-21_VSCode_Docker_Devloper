@@ -83,7 +83,7 @@ class TestGetItems:
         for i in range(3):
             await client.post(
                 "/items",
-                json={"title": f"Item {i}", "description": f"Desc {i}", "price": 10.0 * i},
+                json={"title": f"Item {i}", "description": f"Desc {i}", "price": 10.0 * (i + 1)},
             )
 
         response = await client.get("/items")

@@ -11,8 +11,8 @@ from sqlalchemy.orm import sessionmaker
 from main import app
 from database import Base, get_db
 
-# Test database URL
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5433/fastapi_db"
+# Test database URL (use 'db' service name when running in container)
+TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@db:5432/fastapi_db"
 
 # Create async engine for tests
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -81,24 +81,19 @@ async def authenticated_client(
     # Register user
     response = await client.post("/users", json=test_user_data)
     assert response.status_code == 201
-    user_response = response.json()
+    registration_response = response.json()
 
-    # Login to get token
-    login_data = {
-        "username": test_user_data["username"],
-        "password": test_user_data["password"],
-    }
-    response = await client.post(
-        "/token",
-        data=login_data,
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-    )
-    assert response.status_code == 200
-    token_data = response.json()
+    # Extract user and token from registration response
+    # /users endpoint now returns: {access_token, token_type, user}
+    user_info = registration_response["user"]
+    access_token = registration_response["access_token"]
 
     # Set authorization header
-    client.headers["Authorization"] = f"Bearer {token_data['access_token']}"
+    client.headers["Authorization"] = f"Bearer {access_token}"
 
-    yield client, {"user": user_response, "token": token_data}
+    yield client, {
+        "user": user_info,
+        "token": {"access_token": access_token, "token_type": "bearer"}
+    }
 
     # Cleanup is handled by db_session fixture
