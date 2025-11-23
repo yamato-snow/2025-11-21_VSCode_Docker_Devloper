@@ -1,12 +1,13 @@
 """
 Authentication endpoint tests for FastAPI
 """
+import os
 import pytest
 from httpx import AsyncClient
 from jose import jwt
 from passlib.context import CryptContext
 
-SECRET_KEY = "your-secret-key-keep-it-secret"  # Should match main.py
+SECRET_KEY = os.getenv("SECRET_KEY", "dev_secret_key_change_in_production")  # Should match main.py
 ALGORITHM = "HS256"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -164,8 +165,8 @@ class TestLogin:
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
 
-        assert response.status_code == 400
-        assert "Inactive user" in response.json()["detail"]
+        assert response.status_code == 401
+        assert "inactive" in response.json()["detail"].lower()
 
 
 @pytest.mark.asyncio

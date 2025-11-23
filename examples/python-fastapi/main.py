@@ -96,6 +96,7 @@ class Item(ItemBase):
     """アイテムレスポンススキーマ"""
     id: int
     owner_id: int
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -281,6 +282,15 @@ async def login(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # アクティブユーザーチェック
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account is inactive",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
@@ -296,7 +306,14 @@ async def read_users_me(
     return current_user
 
 
-@app.post("/users", response_model=User, status_code=status.HTTP_201_CREATED, tags=["Users"])
+class UserRegistrationResponse(BaseModel):
+    """ユーザー登録レスポンススキーマ"""
+    access_token: str
+    token_type: str
+    user: User
+
+
+@app.post("/users", response_model=UserRegistrationResponse, status_code=status.HTTP_201_CREATED, tags=["Users"])
 async def create_user(
     user: UserCreate,
     db: Annotated[AsyncSession, Depends(get_db)]
@@ -326,7 +343,18 @@ async def create_user(
         email=user.email,
         hashed_password=hashed_password,
     )
-    return db_user
+
+    # トークン生成（ユーザー登録時にも発行）
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": db_user.username}, expires_delta=access_token_expires
+    )
+
+    return UserRegistrationResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=User.model_validate(db_user)
+    )
 
 
 @app.get("/items", response_model=list[Item], tags=["Items"])

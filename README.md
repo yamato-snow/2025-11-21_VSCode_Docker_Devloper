@@ -1609,7 +1609,7 @@ CMD ["node", "dist/index.js"]
 `.devcontainer/docker-compose.yml` を作成：
 
 ```yaml
-version: '3.8'
+
 
 services:
   # アプリケーション（開発環境）
@@ -2098,7 +2098,7 @@ docker images myapp:latest
 #### docker-compose.yml（ベース）
 
 ```yaml
-version: '3.8'
+
 
 services:
   app:
@@ -2139,7 +2139,7 @@ volumes:
 #### docker-compose.prod.yml（本番用オーバーライド）
 
 ```yaml
-version: '3.8'
+
 
 services:
   app:
