@@ -524,6 +524,484 @@ curl -X POST "http://localhost:8000/users" \
 docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 ```
 
+## Debugging in Dev Containers
+
+All example projects are configured for debugging in VSCode Dev Containers. This section covers debugging for both backend and frontend code.
+
+### Understanding Debugging Terminology
+
+Before diving into debugging, let's clarify key terms:
+
+**デバッガー (Debugger)**
+- プログラムの実行を制御し、内部状態を検査できるツール
+- 英語: A tool that allows you to control program execution and inspect internal state
+
+**ブレークポイント (Breakpoint)**
+- プログラムの実行を一時停止する位置
+- コードの特定の行に設定し、その行に到達すると実行が停止する
+- 英語: A marker that pauses program execution at a specific line
+
+**ステップ実行 (Step Execution)**
+- コードを1行ずつ実行して動作を追跡する機能
+  - **Step Over (ステップオーバー)**: 関数呼び出しを1ステップとして実行
+  - **Step Into (ステップイン)**: 関数の中に入って実行
+  - **Step Out (ステップアウト)**: 現在の関数から抜ける
+- 英語: Execute code line by line to trace behavior
+
+**変数ウォッチ (Watch Variables)**
+- 変数の値をリアルタイムで監視する機能
+- デバッガーが停止している間、変数の現在の値を確認できる
+- 英語: Monitor variable values in real-time during debugging
+
+**コールスタック (Call Stack)**
+- 関数の呼び出し履歴を表示
+- 現在の関数がどこから呼ばれたかを追跡できる
+- 英語: Shows the chain of function calls that led to the current point
+
+**アタッチ (Attach)**
+- すでに実行中のプロセスにデバッガーを接続すること
+- Dev Containersでは、コンテナ内で動作しているプロセスにアタッチする
+- 英語: Connect the debugger to an already running process
+
+### Debug Configuration Files
+
+All examples include `.vscode/launch.json` for debugging configuration:
+
+**Node.js Example** (`examples/nodejs-postgres/.vscode/launch.json`):
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Backend (Node.js)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug Frontend (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/client"
+    }
+  ]
+}
+```
+
+**Python Examples** (`examples/python-fastapi/.vscode/launch.json`):
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug FastAPI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
+      "jinja": true,
+      "justMyCode": false
+    },
+    {
+      "name": "Debug Tests (pytest)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v", "--tb=short"],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}
+```
+
+### Debugging Backend Code
+
+#### Node.js/Express Debugging
+
+**Prerequisites:**
+- Backend must be started with `--inspect` flag (already configured in dev container)
+- Port 9229 exposed for debugger connection
+
+**Steps:**
+1. **Set Breakpoints**
+   - Open backend file (e.g., `src/index.ts`)
+   - Click left margin next to line number (red dot appears)
+   - Breakpoint will pause execution when that line is reached
+
+2. **Start Debugging**
+   - Press `F5` or Run → Start Debugging
+   - Select "Debug Backend (Node.js)" configuration
+   - Debugger attaches to running Node.js process
+
+3. **Trigger Breakpoint**
+   - Make API request (e.g., `curl http://localhost:3000/api/users`)
+   - Execution pauses at breakpoint
+   - VSCode Debug panel shows:
+     - **Variables**: Current variable values
+     - **Call Stack**: Function call hierarchy
+     - **Watch**: Custom expressions to monitor
+
+4. **Step Through Code**
+   - **F10**: Step Over (execute current line, don't enter functions)
+   - **F11**: Step Into (enter function calls)
+   - **Shift+F11**: Step Out (exit current function)
+   - **F5**: Continue (run until next breakpoint)
+
+5. **Inspect Variables**
+   - Hover over variables to see values
+   - Use Debug Console to evaluate expressions
+   - Add variables to Watch panel for continuous monitoring
+
+**Example Debugging Session:**
+```typescript
+// src/index.ts
+app.get('/api/users', async (req, res) => {
+  // Set breakpoint here ← Click to add breakpoint
+  const users = await pool.query('SELECT * FROM users');
+  // Debugger pauses, inspect 'users' variable
+  res.json(users.rows);
+});
+```
+
+#### Python/FastAPI Debugging
+
+**Prerequisites:**
+- `debugpy` extension installed (included in devcontainer)
+- FastAPI app configured for debugging
+
+**Steps:**
+1. **Set Breakpoints**
+   - Open Python file (e.g., `main.py`)
+   - Click left margin to add breakpoint
+
+2. **Start Debugging**
+   - Press `F5` → Select "Debug FastAPI"
+   - Server starts in debug mode
+   - Breakpoints become active
+
+3. **Debug API Endpoints**
+   ```python
+   # main.py
+   @app.get("/users")
+   async def get_users(db: AsyncSession = Depends(get_db)):
+       # Set breakpoint here ← Click to add
+       users = await crud.get_users(db)
+       # Inspect 'users' variable in Debug panel
+       return users
+   ```
+
+4. **Debug Async Code**
+   - FastAPI uses async/await
+   - Debugger can step through async functions
+   - Watch panel shows Promise states
+
+**Python Flask Debugging (similar process):**
+```python
+# app.py
+@app.route('/api/users')
+def get_users():
+    # Set breakpoint here
+    users = User.query.all()
+    return jsonify([user.to_dict() for user in users])
+```
+
+#### Debugging Tests
+
+**Node.js/Jest:**
+```bash
+# Run tests in debug mode
+node --inspect-brk node_modules/.bin/jest --runInBand
+
+# In VSCode:
+# 1. Set breakpoint in test file
+# 2. F5 → "Debug Jest Tests"
+```
+
+**Python/pytest:**
+```bash
+# Method 1: VSCode launch configuration
+# 1. Set breakpoint in tests/test_*.py
+# 2. F5 → "Debug Tests (pytest)"
+
+# Method 2: Command line
+pytest --pdb  # Drops into debugger on failure
+```
+
+**Example Test Debugging:**
+```python
+# tests/test_auth.py
+async def test_login_success(client, test_user_data):
+    # Set breakpoint here
+    response = await client.post("/users", json=test_user_data)
+    # Debugger pauses, inspect 'response' object
+    assert response.status_code == 201
+```
+
+### Debugging Frontend Code
+
+#### React/Vite Debugging
+
+**Browser DevTools (Recommended for Frontend):**
+1. Open browser: `http://localhost:5173`
+2. Press `F12` to open DevTools
+3. Go to **Sources** tab
+4. Find your React component files (mapped via source maps)
+5. Click line number to set breakpoint
+6. Interact with UI to trigger breakpoint
+
+**VSCode Chrome Debugger:**
+1. Install "Debugger for Chrome" extension (if not included)
+2. Set breakpoint in React component (e.g., `client/src/App.tsx`)
+3. Press `F5` → Select "Debug Frontend (Chrome)"
+4. VSCode opens Chrome with debugger attached
+5. Breakpoints in VSCode work in browser
+
+**Example React Debugging:**
+```typescript
+// client/src/components/UserList.tsx
+const UserList = () => {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    // Set breakpoint here
+    fetch('/api/users')
+      .then(res => res.json())
+      .then(data => {
+        // Inspect 'data' in debugger
+        setUsers(data);
+      });
+  }, []);
+
+  return <div>{/* ... */}</div>;
+};
+```
+
+**React DevTools Browser Extension:**
+- Install React DevTools extension
+- Inspect component hierarchy
+- View component props and state
+- Profile component rendering
+
+### Remote Debugging in Dev Containers
+
+**How it Works:**
+Dev Containers run code inside Docker containers, but VSCode debugger runs on your host machine. Port forwarding makes this seamless.
+
+**Port Configuration:**
+```json
+// .devcontainer/devcontainer.json
+{
+  "forwardPorts": [
+    3000,   // Backend server
+    5173,   // Frontend dev server
+    9229    // Node.js debugger port
+  ],
+  "portsAttributes": {
+    "9229": {
+      "label": "Node.js Debug",
+      "onAutoForward": "silent"  // Don't show notification
+    }
+  }
+}
+```
+
+**Troubleshooting Remote Debugging:**
+
+1. **Debugger Won't Attach**
+   - Verify port is forwarded: Check PORTS tab in VSCode
+   - Ensure process started with `--inspect` flag
+   - Check firewall isn't blocking port
+
+2. **Breakpoints Not Hit**
+   - Verify source maps are enabled
+   - Check file paths match between container and host
+   - Ensure code is actually executing (not cached)
+
+3. **Variables Show "undefined"**
+   - May be optimized out in production builds
+   - Use development builds for debugging
+   - Check `justMyCode: false` in launch.json
+
+### Common Debugging Patterns
+
+#### Debugging Database Queries
+
+**Node.js with pg:**
+```typescript
+// Enable query logging
+const pool = new Pool({
+  // ...
+  log: (msg) => console.log('PG:', msg)  // Log all queries
+});
+
+// Debug specific query
+app.get('/api/users', async (req, res) => {
+  const query = 'SELECT * FROM users WHERE id = $1';
+  const params = [req.params.id];
+
+  console.log('Query:', query, 'Params:', params);  // ← Debug log
+  const result = await pool.query(query, params);
+  console.log('Result rows:', result.rows.length);   // ← Debug log
+
+  res.json(result.rows);
+});
+```
+
+**Python with SQLAlchemy:**
+```python
+# Enable SQL logging
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=True  # Prints all SQL queries to console
+)
+
+# Debug specific query
+@app.get("/users/{user_id}")
+async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    # Set breakpoint here
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    # Inspect 'user' object in debugger
+    return user
+```
+
+#### Debugging Authentication Issues
+
+**JWT Token Inspection:**
+```typescript
+// Node.js
+import jwt from 'jsonwebtoken';
+
+app.post('/api/protected', authenticateToken, (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  console.log('Token:', token);  // ← Check raw token
+
+  const decoded = jwt.decode(token, { complete: true });
+  console.log('Decoded:', decoded);  // ← Inspect payload
+
+  // Set breakpoint to inspect req.user
+  res.json({ user: req.user });
+});
+```
+
+**Python:**
+```python
+from jose import jwt
+
+@app.get("/protected")
+async def protected_route(current_user: User = Depends(get_current_user)):
+    # Set breakpoint here
+    # Inspect 'current_user' to verify authentication
+    return {"user": current_user}
+```
+
+#### Debugging Async Code
+
+**Python async/await:**
+```python
+async def complex_operation():
+    # Set breakpoint here
+    result1 = await fetch_data()  # Step into with F11
+
+    # Inspect result1 in debugger
+    result2 = await process_data(result1)
+
+    return result2
+```
+
+**JavaScript Promises:**
+```typescript
+async function fetchUsers() {
+  try {
+    // Set breakpoint here
+    const response = await fetch('/api/users');
+    const data = await response.json();  // Step through await
+
+    // Inspect 'data' in debugger
+    return data;
+  } catch (error) {
+    // Breakpoint here to catch errors
+    console.error('Error:', error);
+  }
+}
+```
+
+### Performance Debugging
+
+**Node.js Performance Profiling:**
+```bash
+# Start with profiling enabled
+node --inspect --prof src/index.ts
+
+# Generate profile report
+node --prof-process isolate-*.log > profile.txt
+```
+
+**Python Memory Profiling:**
+```bash
+# Install memory_profiler
+pip install memory-profiler
+
+# Profile specific function
+@profile
+def memory_intensive_function():
+    # Your code here
+    pass
+
+# Run with profiling
+python -m memory_profiler main.py
+```
+
+**VSCode Performance Extensions:**
+- **Flame Chart**: Visualize execution time
+- **Python Profiler**: Built-in Python profiling
+- **Chrome DevTools**: Frontend performance profiling
+
+### Debugging Best Practices
+
+1. **Use Descriptive Breakpoints**
+   - Right-click breakpoint → Edit Breakpoint → Add condition
+   - Example: `user.id === 123` (only breaks for specific user)
+
+2. **Leverage Logpoints**
+   - Right-click line → Add Logpoint
+   - Logs message without stopping execution
+   - Example: `User ID: {user.id}, Status: {user.status}`
+
+3. **Debug Console for Quick Tests**
+   - While paused at breakpoint, use Debug Console
+   - Execute expressions: `user.email`, `users.length`
+   - Modify variables: `user.role = 'admin'` (temporary change)
+
+4. **Source Maps**
+   - Ensure TypeScript/Babel generates source maps
+   - Allows debugging original source, not transpiled code
+   - Check `tsconfig.json`: `"sourceMap": true`
+
+5. **Environment-Specific Debugging**
+   - Development: Full debugging, verbose logging
+   - Production: Minimal logging, error tracking only
+   - Use environment variables: `DEBUG=true`
+
+### Debugging Resources
+
+**VSCode Debugging Documentation:**
+- Node.js: https://code.visualstudio.com/docs/nodejs/nodejs-debugging
+- Python: https://code.visualstudio.com/docs/python/debugging
+
+**Browser DevTools:**
+- Chrome: https://developer.chrome.com/docs/devtools/
+- Firefox: https://firefox-source-docs.mozilla.org/devtools-user/
+
+**Framework-Specific:**
+- FastAPI: https://fastapi.tiangolo.com/tutorial/debugging/
+- Express: https://expressjs.com/en/guide/debugging.html
+- React: https://react.dev/learn/react-developer-tools
+
 ## Database Management
 
 All examples use PostgreSQL. Common patterns:

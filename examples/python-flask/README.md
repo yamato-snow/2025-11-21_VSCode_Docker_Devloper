@@ -537,6 +537,108 @@ curl http://localhost:5001/api/items
 }
 ```
 
+## 🐛 デバッグ方法
+
+このプロジェクトは、VSCode の統合デバッガーを使用したデバッグに対応しています。
+
+### 基本的なデバッグ手順
+
+1. **ブレークポイントを設定**
+   - デバッグしたいコード行の左側（行番号の隣）をクリック
+   - 赤い丸が表示されたらブレークポイント設定完了
+
+2. **デバッグを開始**
+   - `F5`キーを押す、または「実行とデバッグ」パネルから起動
+   - 以下のデバッグ設定から選択：
+     - **Debug Flask**: Flaskアプリケーションをデバッグモードで起動
+     - **Debug Python File**: 現在開いているPythonファイルを実行
+     - **Debug Tests (pytest)**: 全テストをデバッグモードで実行
+
+3. **ブレークポイントで停止**
+   - APIリクエストやテスト実行時、ブレークポイントで実行が停止
+   - 変数の値を確認、コールスタックを表示
+
+4. **ステップ実行**
+   - **F10**: ステップオーバー（次の行へ）
+   - **F11**: ステップイン（関数の中に入る）
+   - **Shift+F11**: ステップアウト（関数から出る）
+   - **F5**: 続行（次のブレークポイントまで実行）
+
+### バックエンド（Flask）のデバッグ
+
+```python
+# app.py
+@app.route('/api/users/<int:user_id>')
+def get_user(user_id):
+    # ← ここにブレークポイントを設定
+    user = User.query.get(user_id)
+    # デバッガーで 'user' 変数の内容を確認できる
+    if user:
+        return jsonify(user.to_dict())
+    return jsonify({'error': 'User not found'}), 404
+```
+
+**便利な機能:**
+- **変数パネル**: 現在のスコープの全変数を表示
+- **ウォッチパネル**: 特定の式を継続的に監視（例: `user.email`, `len(users)`）
+- **デバッグコンソール**: 実行中に任意のPythonコードを評価
+
+### テストのデバッグ
+
+```python
+# tests/test_users.py
+def test_create_user(client):
+    # ← ここにブレークポイントを設定
+    response = client.post('/api/users', json={
+        'username': 'testuser',
+        'email': 'test@example.com',
+        'password': 'password123'
+    })
+    # デバッガーで 'response' の内容を確認
+    assert response.status_code == 201
+```
+
+**実行方法:**
+1. テストファイルを開く
+2. `F5` → "Debug Tests (pytest)"
+3. ブレークポイントで停止し、変数を検査
+
+### フロントエンド（React）のデバッグ
+
+ブラウザの開発者ツールを使用します：
+
+1. ブラウザで `http://localhost:5173` を開く
+2. `F12`キーで開発者ツールを開く
+3. **Sources**タブで TypeScript ファイルを表示
+4. 行番号をクリックしてブレークポイントを設定
+
+### データベースクエリのデバッグ
+
+SQLクエリをコンソールに出力する設定：
+
+```python
+# app.py
+app.config['SQLALCHEMY_ECHO'] = True  # ← この行を追加すると全SQLが出力される
+```
+
+または、環境変数で設定：
+
+```bash
+# .env
+SQLALCHEMY_ECHO=True
+```
+
+### より詳しいデバッグガイド
+
+包括的なデバッグ手順とテクニックについては、[CLAUDE.md の Debugging セクション](../../CLAUDE.md#debugging-in-dev-containers)を参照してください。以下のトピックをカバーしています：
+
+- リモートデバッグの仕組み
+- JWT認証のデバッグ
+- Flask特有のデバッグテクニック
+- パフォーマンスプロファイリング
+- 条件付きブレークポイント
+- ログポイントの使用
+
 ## 🗄️ データベース操作
 
 ### PostgreSQLに直接接続

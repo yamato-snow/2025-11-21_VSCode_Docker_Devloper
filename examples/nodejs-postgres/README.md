@@ -908,6 +908,174 @@ chmod +x test.sh
 ./test.sh
 ```
 
+## 🐛 デバッグ方法
+
+このプロジェクトは、VSCode の統合デバッガーを使用したデバッグに対応しています。
+
+### 基本的なデバッグ手順
+
+1. **ブレークポイントを設定**
+   - デバッグしたいコード行の左側（行番号の隣）をクリック
+   - 赤い丸が表示されたらブレークポイント設定完了
+
+2. **デバッグを開始**
+   - `F5`キーを押す、または「実行とデバッグ」パネルから起動
+   - 以下のデバッグ設定から選択：
+     - **Debug Backend (Node.js)**: バックエンドAPIサーバーにアタッチ
+     - **Debug Frontend (Chrome)**: React アプリケーションをChromeでデバッグ
+     - **Debug Tests (Jest)**: 全テストをデバッグモードで実行
+     - **Debug Current Test File**: 現在開いているテストファイルのみデバッグ
+
+3. **ブレークポイントで停止**
+   - APIリクエストやテスト実行時、ブレークポイントで実行が停止
+   - 変数の値を確認、コールスタックを表示
+
+4. **ステップ実行**
+   - **F10**: ステップオーバー（次の行へ）
+   - **F11**: ステップイン（関数の中に入る）
+   - **Shift+F11**: ステップアウト（関数から出る）
+   - **F5**: 続行（次のブレークポイントまで実行）
+
+### バックエンド（Express + TypeScript）のデバッグ
+
+**重要**: バックエンドのデバッグは、すでに起動しているNode.jsプロセスに**アタッチ**する方式です。
+
+```typescript
+// src/index.ts
+app.get('/api/users', authenticateToken, async (req, res) => {
+  try {
+    // ← ここにブレークポイントを設定
+    const result = await pool.query('SELECT id, username, email, created_at FROM users');
+    // デバッガーで 'result.rows' の内容を確認できる
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+```
+
+**デバッグ手順:**
+1. Dev Containerが起動していることを確認（バックエンドは自動起動）
+2. `src/index.ts` を開いてブレークポイントを設定
+3. `F5` → "Debug Backend (Node.js)" を選択
+4. デバッガーが起動中のプロセスにアタッチ
+5. ブラウザやcurlでAPIリクエストを送信
+6. ブレークポイントで実行が停止
+
+**便利な機能:**
+- **変数パネル**: 現在のスコープの全変数を表示（`result`, `req`, `res`など）
+- **ウォッチパネル**: 特定の式を継続的に監視（例: `req.user.id`, `result.rows.length`）
+- **デバッグコンソール**: 実行中に任意のJavaScript/TypeScriptコードを評価
+
+### テストのデバッグ
+
+```typescript
+// tests/auth.test.ts
+describe('POST /auth/token', () => {
+  it('should return token for valid credentials', async () => {
+    // ← ここにブレークポイントを設定
+    const response = await request(app)
+      .post('/auth/token')
+      .send({ username: 'testuser', password: 'password123' });
+
+    // デバッガーで 'response.body' の内容を確認
+    expect(response.status).toBe(200);
+    expect(response.body.access_token).toBeDefined();
+  });
+});
+```
+
+**実行方法:**
+1. テストファイルを開く
+2. `F5` → "Debug Tests (Jest)" または "Debug Current Test File"
+3. ブレークポイントで停止し、変数を検査
+
+### フロントエンド（React）のデバッグ
+
+**ブラウザの開発者ツール（推奨）:**
+
+1. ブラウザで `http://localhost:5173` を開く
+2. `F12`キーで開発者ツールを開く
+3. **Sources**タブで TypeScript ファイルを表示（ソースマップ経由）
+4. 行番号をクリックしてブレークポイントを設定
+
+**VSCode Chrome Debugger:**
+
+1. `client/src/App.tsx` などを開いてブレークポイントを設定
+2. `F5` → "Debug Frontend (Chrome)" を選択
+3. VSCodeが自動的にChromeを起動してアタッチ
+4. VSCode内でブレークポイントが機能
+
+```typescript
+// client/src/components/UserList.tsx
+const UserList = () => {
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      // ← ここにブレークポイントを設定
+      const data = await api.getUsers();
+      // デバッガーで 'data' の内容を確認
+      setUsers(data);
+    };
+    fetchUsers();
+  }, []);
+
+  return (
+    <div>
+      {users.map(user => (
+        <div key={user.id}>{user.username}</div>
+      ))}
+    </div>
+  );
+};
+```
+
+### データベースクエリのデバッグ
+
+PostgreSQLクエリをコンソールに出力：
+
+```typescript
+// src/index.ts
+// クエリ実行前にログ出力
+const query = 'SELECT * FROM users WHERE id = $1';
+const params = [userId];
+
+console.log('Query:', query);       // ← デバッグログ
+console.log('Params:', params);     // ← デバッグログ
+
+const result = await pool.query(query, params);
+console.log('Result count:', result.rows.length);  // ← デバッグログ
+```
+
+### Node.js インスペクターについて
+
+このプロジェクトのバックエンドは、起動時に`--inspect`フラグ付きで実行されます：
+
+```json
+// package.json
+"scripts": {
+  "server:dev": "nodemon --watch src --exec 'ts-node --inspect=0.0.0.0:9229 src/index.ts'"
+}
+```
+
+- **ポート 9229**: Node.jsデバッガー専用ポート
+- **0.0.0.0**: すべてのネットワークインターフェイスでリッスン（Docker用）
+- VSCodeはこのポートに接続してデバッグを実行
+
+### より詳しいデバッグガイド
+
+包括的なデバッグ手順とテクニックについては、[CLAUDE.md の Debugging セクション](../../CLAUDE.md#debugging-in-dev-containers)を参照してください。以下のトピックをカバーしています：
+
+- リモートデバッグの仕組み
+- TypeScriptのデバッグとソースマップ
+- 非同期コード（async/await、Promise）のデバッグ
+- JWT認証のデバッグ
+- パフォーマンスプロファイリング
+- 条件付きブレークポイント
+- ログポイントの使用
+
 ## 🏭 本番環境ビルド
 
 ### ローカルでテスト
