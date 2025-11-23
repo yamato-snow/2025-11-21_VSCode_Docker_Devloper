@@ -1,6 +1,5 @@
 import request from 'supertest';
 import { Pool } from 'pg';
-import bcrypt from 'bcrypt';
 
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/myapp';
 

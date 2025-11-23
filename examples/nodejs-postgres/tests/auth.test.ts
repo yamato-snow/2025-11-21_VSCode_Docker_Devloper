@@ -1,5 +1,4 @@
 import request from 'supertest';
-import express, { Express } from 'express';
 import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';

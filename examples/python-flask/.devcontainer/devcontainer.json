@@ -117,8 +117,10 @@
   },
 
   // ライフサイクルコマンド
-  "postCreateCommand": "pip install -r requirements.txt -r requirements-dev.txt && npm install && python init_db.py",
-  "postStartCommand": "echo '✅ Flask + React Dev Container is ready!\n🐍 Flask API: http://localhost:5001\n⚛️  React App: http://localhost:5173'",
+  // NOTE: npm installとの競合を避けるため、データベース初期化は手動実行に変更
+  // 初回起動後、コンテナ内で `python init_db.py` を実行してください
+  "postCreateCommand": "pip install -r requirements.txt -r requirements-dev.txt && npm install",
+  "postStartCommand": "echo '✅ Flask + React Dev Container is ready!\n🐍 Flask API: http://localhost:5001\n⚛️  React App: http://localhost:5173\n\n⚠️  初回起動時は以下を実行してください:\n   python init_db.py'",
 
   // コンテナ内の実行ユーザー
   "remoteUser": "root",

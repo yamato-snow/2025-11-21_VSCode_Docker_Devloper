@@ -11,6 +11,8 @@ services:
     volumes:
       # ソースコードのホットリロード
       - ..:/workspace:cached
+      # node_modules をコンテナ専用にしてプラットフォーム不一致を防ぐ
+      - node_modules:/workspace/node_modules
 
     ports:
       - "5001:5000"    # Flask API (5001 on host to avoid macOS AirPlay conflict)
@@ -55,3 +57,4 @@ services:
 
 volumes:
   postgres_data:
+  node_modules:  # コンテナ専用（ホストとの分離でプラットフォーム不一致を防ぐ）
