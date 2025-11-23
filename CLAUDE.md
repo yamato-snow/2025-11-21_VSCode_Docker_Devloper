@@ -71,11 +71,12 @@ npm run lint:fix         # Auto-fix ESLint issues
 **Key Configuration:**
 - devcontainer.json: Uses docker-compose.yml in `.devcontainer/`
 - Multi-stage Dockerfile with `development` and `production` targets
-- Database initialization: `init-db.js` (Node.js script using `pg` package)
-- PostCreateCommand: `npm run db:setup` (database initialization only)
+- Database initialization: `init-db.js` (Node.js script using `pg` package, **manual execution required**)
+- PostCreateCommand: Commented out to avoid conflicts with auto-start command
 - Auto-start: docker-compose.yml `command: sh -c "npm install && npm run dev"`
 - remoteUser: `root` (python-fastapiと統一)
-- Volume mount: Direct bind mount without node_modules volume (python-fastapiと統一)
+- Volume mount: Source code bind mount + **node_modules volume** (prevents platform mismatch for native modules like bcrypt)
+- **First-time setup**: Run `npm run db:setup` manually after container starts
 
 **Database Integration:**
 - Real PostgreSQL database with `pg` package
@@ -354,6 +355,7 @@ Each example has two compose files:
 
 1. **`.devcontainer/docker-compose.yml`**: Development-optimized
    - Volume mounts for hot reload
+   - **node_modules volume** (container-only, prevents platform mismatch for native modules)
    - Debugging ports exposed
    - Development environment variables
    - Automatic dependency installation via postCreateCommand
@@ -571,10 +573,11 @@ docker compose exec db psql -U postgres -d fastapi_db -c "SELECT * FROM items;"
 ```
 
 **Database Initialization Pattern (Unified):**
-- **Node.js**: `init-db.js` - Node.js script using `pg` package (no psql command)
-- **Python FastAPI**: `init_db.py` - Python async script with SQLAlchemy
-- **Python Flask**: `init_db.py` - Python script with Flask-SQLAlchemy
+- **Node.js**: `init-db.js` - Node.js script using `pg` package (no psql command, **manual execution required**)
+- **Python FastAPI**: `init_db.py` - Python async script with SQLAlchemy (**manual execution required**)
+- **Python Flask**: `init_db.py` - Python script with Flask-SQLAlchemy (**manual execution required**)
 - **Common approach**: All use language-native database clients with DATABASE_URL environment variable (no manual password entry)
+- **IMPORTANT**: Database initialization is **NOT** executed automatically on container startup to avoid conflicts with auto-start commands. Run manually after first container startup.
 
 ## Port Conventions
 
@@ -657,19 +660,83 @@ F1 → "Dev Containers: Clone Repository in Container Volume"
 
 **Solution:**
 ```bash
-# Node.js example - Manually run database setup
+# Node.js example - Manually run database setup inside Dev Container
+npm run db:setup
+
+# Python FastAPI example - Manually run inside Dev Container
+python init_db.py
+
+# Python Flask example - Manually run inside Dev Container
+python init_db.py
+
+# Or from host machine (if container is running but not accessible)
 docker exec nodejs-postgres_devcontainer-app-1 npm run db:setup
-
-# Python FastAPI example
 docker exec python-fastapi_devcontainer-api-1 python init_db.py
-
-# Or rebuild container (will trigger postCreateCommand)
-F1 → "Dev Containers: Rebuild Container"
+docker exec python-flask_devcontainer-app-1 python init_db.py
 ```
 
-**Prevention:** Ensure `postCreateCommand` is set correctly in devcontainer.json:
-- Node.js: `"postCreateCommand": "npm run db:setup"`
-- FastAPI: `"postCreateCommand": "pip install -r requirements.txt && python init_db.py"`
+**Important:** Database initialization is **intentionally manual** to avoid conflicts with auto-start commands. Always run the initialization script manually after first container startup.
+
+### postCreateCommand failures (exit code 137 or dependency conflicts)
+
+**Error:** `postCreateCommand failed with exit code 137` or `ERESOLVE unable to resolve dependency tree`
+
+**Cause:**
+- **Exit code 137**: OOM (Out of Memory) kill, or timing conflicts with docker-compose `command`
+- **Dependency conflicts**: For nodejs-postgres, React 19 requires @testing-library/react ^16.0.0 (not ^14.x)
+
+**Solution:**
+```bash
+# 1. For React 19 dependency conflicts (nodejs-postgres only)
+# Ensure package.json has:
+"@testing-library/react": "^16.0.0"
+"@testing-library/jest-dom": "^6.6.0"
+
+# 2. Clean up and rebuild
+rm -rf node_modules package-lock.json
+docker compose down -v
+F1 → "Dev Containers: Rebuild Container"
+
+# 3. If still failing, check Docker Desktop memory allocation
+# Docker Desktop → Settings → Resources → Memory (set to 4GB+ minimum)
+```
+
+**Prevention:**
+- All projects now use **manual database initialization** to avoid postCreateCommand conflicts
+- postCreateCommand only installs dependencies (npm install / pip install)
+- Database setup (`npm run db:setup` / `python init_db.py`) runs manually after container starts
+
+### Native module errors (bcrypt, node-gyp)
+
+**Error:** `Cannot find module '/workspace/node_modules/bcrypt/lib/binding/napi-v3/bcrypt_lib.node'`
+
+**Cause:** Platform mismatch - native modules compiled for macOS (host) being used in Linux (container)
+
+**Solution (Immediate):**
+```bash
+# Inside Dev Container
+npm rebuild
+```
+
+**Solution (Permanent - Already Applied):**
+All projects now use **named volume for node_modules** to prevent host/container conflicts:
+
+```yaml
+# docker-compose.yml
+volumes:
+  - ..:/workspace:cached
+  - node_modules:/workspace/node_modules  # Container-only volume
+
+volumes:
+  node_modules:  # Named volume (not shared with host)
+```
+
+**Benefits:**
+- Native modules (bcrypt, node-gyp, etc.) are compiled for Linux only
+- No platform mismatch between macOS host and Linux container
+- Faster npm operations (no cross-filesystem sync)
+
+**Note:** This means node_modules is NOT visible on your host machine. To inspect packages, use the Dev Container terminal.
 
 ## Modifying Examples for New Projects
 

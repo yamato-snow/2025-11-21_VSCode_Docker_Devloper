@@ -11,6 +11,8 @@ services:
     volumes:
       # ソースコードのホットリロード
       - ..:/workspace:cached
+      # node_modules をコンテナ専用にしてプラットフォーム不一致を防ぐ
+      - node_modules:/workspace/node_modules
 
     ports:
       - "3000:3000"    # バックエンド（Express）
@@ -80,3 +82,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  node_modules:  # コンテナ専用（ホストとの分離でプラットフォーム不一致を防ぐ）

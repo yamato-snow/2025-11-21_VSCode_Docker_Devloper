@@ -95,13 +95,15 @@
 
   // ライフサイクルコマンド
   // コンテナ作成直後に1回だけ実行（データベース初期化）
-  "postCreateCommand": "npm run db:setup",
+  // NOTE: npm installとの競合を避けるため、手動実行に変更
+  // 初回起動後、コンテナ内で `npm run db:setup` を実行してください
+  // "postCreateCommand": "npm run db:setup",
 
   // コンテナ起動後に毎回実行
   "postStartCommand": "echo '🔄 Container started. npm run dev is running automatically.'",
 
   // コンテナ接続後に実行
-  "postAttachCommand": "echo '✅ Dev Container is ready!\n🚀 Backend + Frontend auto-started\n🔗 Backend: http://localhost:3000\n⚛️  Frontend: http://localhost:5173'",
+  "postAttachCommand": "echo '✅ Dev Container is ready!\n🚀 Backend + Frontend auto-started\n🔗 Backend: http://localhost:3000\n⚛️  Frontend: http://localhost:5173\n\n⚠️  初回起動時は以下を実行してください:\n   npm run db:setup'",
 
   // コンテナ内の実行ユーザー
   "remoteUser": "root",
